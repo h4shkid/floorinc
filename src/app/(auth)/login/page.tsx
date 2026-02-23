@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,25 +21,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const result = await signIn("credentials", {
+    // Let NextAuth handle the full redirect server-side
+    await signIn("credentials", {
       email,
       password,
-      redirect: false,
+      callbackUrl: "/",
     });
 
-    if (result?.error) {
-      setError("Invalid email or password");
-      setLoading(false);
-    } else {
-      window.location.href = "/";
-    }
+    // If we reach here, signIn failed (redirect didn't happen)
+    setError("Invalid email or password");
+    setLoading(false);
   }
 
   function handleDemoLogin(demoEmail: string) {
