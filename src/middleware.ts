@@ -6,7 +6,16 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Get JWT token directly (no Prisma/bcryptjs needed)
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  // NextAuth v5 uses "authjs.session-token" cookie name (not "next-auth.session-token")
+  const isSecure = req.nextUrl.protocol === "https:";
+  const cookieName = isSecure
+    ? "__Secure-authjs.session-token"
+    : "authjs.session-token";
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+    cookieName,
+  });
   const isLoggedIn = !!token;
   const role = token?.role as string | undefined;
 
