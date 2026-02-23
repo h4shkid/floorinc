@@ -40,7 +40,10 @@ export default function PortalLayout({
               variant="ghost"
               size="sm"
               className="text-slate-500 hover:text-red-600"
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={async () => {
+                await signOut({ redirect: false });
+                window.location.href = "/login";
+              }}
             >
               <LogOut className="mr-1 h-4 w-4" />
               <span className="hidden sm:inline">Sign Out</span>
