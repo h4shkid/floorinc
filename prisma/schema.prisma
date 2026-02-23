@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  name           String
+  password       String
+  role           String        @default("MANUFACTURER") // SUPER_ADMIN, ADMIN, MANUFACTURER
+  manufacturerId String?
+  manufacturer   Manufacturer? @relation(fields: [manufacturerId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  activityLogs   ActivityLog[]
+}
+
+model Manufacturer {
+  id              String     @id @default(cuid())
+  name            String     @unique
+  location        String     @default("")
+  contactName     String
+  contactEmail    String
+  contactPhone    String
+  avgFulfillment  Float      @default(0)
+  onTimeRate      Float      @default(0)
+  rating          String     @default("GOOD") // EXCELLENT, GOOD, FAIR, POOR
+  status          String     @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  users           User[]
+  products        Product[]
+  orders          Order[]
+  alerts          Alert[]
+  emailLogs       EmailLog[]
+}
+
+model Product {
+  id             String       @id @default(cuid())
+  name           String
+  sku            String       @unique
+  category       String       // HARDWOOD, LAMINATE, VINYL, TILE, CARPET
+  price          Float
+  manufacturerId String
+  manufacturer   Manufacturer @relation(fields: [manufacturerId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  orders         Order[]
+}
+
+model Order {
+  id              String       @id @default(cuid())
+  orderNumber     String       @unique
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  shippingAddress String
+  source          String       // AMAZON, WEBSITE, WAYFAIR, HOME_DEPOT
+  status          String       @default("RECEIVED") // RECEIVED, ASSIGNED, NOTIFIED, SHIPPED, DELIVERED, CANCELLED, DELAYED
+  priority        String       @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  quantity        Int
+  totalPrice      Float
+  productId       String
+  product         Product      @relation(fields: [productId], references: [id])
+  manufacturerId  String?
+  manufacturer    Manufacturer? @relation(fields: [manufacturerId], references: [id])
+  assignedAt      DateTime?
+  notifiedAt      DateTime?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  estimatedShip   DateTime?
+  carrier         String?
+  trackingNumber  String?
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  alerts          Alert[]
+  emailLogs       EmailLog[]
+  activityLogs    ActivityLog[]
+}
+
+model Alert {
+  id             String        @id @default(cuid())
+  type           String        // DELAY, OVERDUE, QUALITY, STOCK, ESCALATION
+  severity       String        // CRITICAL, HIGH, MEDIUM, LOW
+  title          String
+  message        String
+  resolved       Boolean       @default(false)
+  resolvedAt     DateTime?
+  resolvedBy     String?
+  orderId        String?
+  order          Order?        @relation(fields: [orderId], references: [id])
+  manufacturerId String?
+  manufacturer   Manufacturer? @relation(fields: [manufacturerId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model EmailLog {
+  id             String        @id @default(cuid())
+  type           String        // ORDER_CONFIRMATION, SHIPPING_NOTIFICATION, DELAY_ALERT, REMINDER, ESCALATION
+  subject        String
+  body           String
+  recipient      String
+  sender         String        @default("system@floorinc.com")
+  status         String        @default("SENT") // SENT, DELIVERED, FAILED, BOUNCED
+  orderId        String?
+  order          Order?        @relation(fields: [orderId], references: [id])
+  manufacturerId String?
+  manufacturer   Manufacturer? @relation(fields: [manufacturerId], references: [id])
+  createdAt      DateTime      @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String   // ORDER_CREATED, ORDER_ASSIGNED, ORDER_SHIPPED, ALERT_CREATED, ALERT_RESOLVED, EMAIL_SENT, USER_LOGIN
+  details   String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id])
+  createdAt DateTime @default(now())
+}
