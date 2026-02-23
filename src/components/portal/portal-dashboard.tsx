@@ -14,7 +14,9 @@ import {
   Clock,
   CheckCircle2,
   ChevronDown,
+  ScanBarcode,
 } from "lucide-react";
+import { BarcodeScanner } from "@/components/portal/barcode-scanner";
 import { cn } from "@/lib/utils";
 
 // -- Types --
@@ -143,6 +145,7 @@ function ShippingForm({ orderId, onSuccess, onCancel }: ShippingFormProps) {
   const [carrier, setCarrier] = useState<string>("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   async function handleSubmit(): Promise<void> {
     if (!carrier) {
@@ -204,11 +207,30 @@ function ShippingForm({ orderId, onSuccess, onCancel }: ShippingFormProps) {
         <p className="mb-2 text-sm font-semibold text-slate-700">
           Tracking Number
         </p>
-        <Input
-          value={trackingNumber}
-          onChange={(e) => setTrackingNumber(e.target.value)}
-          placeholder="Enter tracking number"
-          className="h-12 text-base"
+        <div className="flex gap-2">
+          <Input
+            value={trackingNumber}
+            onChange={(e) => setTrackingNumber(e.target.value)}
+            placeholder="Enter or scan tracking number"
+            className="h-12 flex-1 text-base"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setScannerOpen(true)}
+            className="h-12 w-12 shrink-0 border-2 border-blue-200 bg-blue-50 p-0 hover:border-blue-400 hover:bg-blue-100"
+            title="Scan barcode"
+          >
+            <ScanBarcode className="h-5 w-5 text-blue-600" />
+          </Button>
+        </div>
+        <BarcodeScanner
+          open={scannerOpen}
+          onOpenChange={setScannerOpen}
+          onScan={(value) => {
+            setTrackingNumber(value);
+            toast.success("Barcode scanned successfully!");
+          }}
         />
       </div>
 
