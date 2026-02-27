@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useForecast } from "./hooks/useForecast";
 import { SummaryCards } from "./components/Dashboard/SummaryCards";
 import { ForecastTable } from "./components/Dashboard/ForecastTable";
