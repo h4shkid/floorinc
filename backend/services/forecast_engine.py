@@ -38,7 +38,7 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
     cat_df = get_product_categories()
 
     # Merge everything onto inventory
-    df = inv_df.merge(vel_df[["sku", "total_sold", "velocity"]], on="sku", how="left")
+    df = inv_df.merge(vel_df[["sku", "total_sold", "velocity", "total_revenue"]], on="sku", how="left")
     df = df.merge(seas_df, on="sku", how="left")
     df = df.merge(lt_df, on="sku", how="left")
     df = df.merge(chan_df, on="sku", how="left")
@@ -53,6 +53,7 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
     # Fill defaults
     df["velocity"] = df["velocity"].fillna(0.0)
     df["total_sold"] = df["total_sold"].fillna(0).astype(int)
+    df["total_revenue"] = df["total_revenue"].fillna(0.0)
     df["seasonality_factor"] = df["seasonality_factor"].fillna(1.0)
     df["lead_time_days"] = df["lead_time_days"].fillna(DEFAULT_LEAD_TIME_DAYS).astype(int)
     df["top_channel"] = df["top_channel"].fillna("")
@@ -108,6 +109,6 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
     df = df.sort_values("priority_score")
 
     # Rename for output
-    df = df.rename(columns={"total_sold": "total_sold_90d"})
+    df = df.rename(columns={"total_sold": "total_sold_90d", "total_revenue": "total_revenue_90d"})
 
     return df

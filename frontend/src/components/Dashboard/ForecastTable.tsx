@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import type { ForecastItem } from "../../types";
+import type { ForecastItem, DashboardTotals } from "../../types";
 import { updateLeadTime } from "../../api/client";
 import { UrgencyBadge } from "./UrgencyBadge";
 
@@ -10,6 +10,7 @@ interface Props {
   onSort: (column: string) => void;
   onRowClick?: (sku: string) => void;
   onLeadTimeChanged?: () => void;
+  totals?: DashboardTotals;
 }
 
 const CHANNEL_SHORT: Record<string, string> = {
@@ -41,6 +42,7 @@ const COLUMNS = [
   { key: "days_remaining", label: "Days Left", tooltip: "Days of Stock Remaining — On Hand / Adjusted Velocity. How many days until stockout at current sell rate", align: "right" },
   { key: "lead_time_days", label: "LT", tooltip: "Lead Time (days) — How many days it takes to receive new stock from the supplier after ordering", align: "right" },
   { key: "total_sold_90d", label: "Sold 90d", tooltip: "Total units sold in the last 90 days", align: "right" },
+  { key: "total_revenue_90d", label: "Rev 90d", tooltip: "Total revenue ($) in the last 90 days", align: "right" },
 ] as const;
 
 function LeadTimeCell({ sku, value, onSaved }: { sku: string; value: number; onSaved: () => void }) {
@@ -107,7 +109,7 @@ function LeadTimeCell({ sku, value, onSaved }: { sku: string; value: number; onS
   );
 }
 
-export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLeadTimeChanged }: Props) {
+export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLeadTimeChanged, totals }: Props) {
   const arrow = (col: string) => {
     if (sortBy !== col) return "";
     return sortDir === "asc" ? " \u2191" : " \u2193";
@@ -129,6 +131,7 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
           <col className="w-20" />        {/* days left */}
           <col className="w-12" />        {/* LT */}
           <col className="w-20" />        {/* sold 90d */}
+          <col className="w-24" />        {/* rev 90d */}
         </colgroup>
         <thead>
           <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
@@ -215,9 +218,31 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
               <td className="px-2 py-1.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
                 {item.total_sold_90d.toLocaleString()}
               </td>
+
+              {/* Revenue 90d */}
+              <td className="px-2 py-1.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
+                ${item.total_revenue_90d.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </td>
             </tr>
           ))}
         </tbody>
+        {totals && (
+          <tfoot>
+            <tr className="bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600 font-semibold text-slate-900 dark:text-slate-100">
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2 text-xs uppercase tracking-wide">Totals</td>
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2 text-right tabular-nums">{totals.on_hand.toLocaleString()}</td>
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2 text-right tabular-nums">{totals.total_sold_90d.toLocaleString()}</td>
+              <td className="px-2 py-2 text-right tabular-nums">${totals.total_revenue_90d.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   );

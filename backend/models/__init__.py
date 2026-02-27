@@ -1,6 +1,7 @@
 from .schemas import (
     ForecastItem,
     ForecastSummary,
+    DashboardTotals,
     DashboardResponse,
     LeadTimeUpdate,
     LeadTimeResponse,
@@ -14,6 +15,7 @@ from .schemas import (
 __all__ = [
     "ForecastItem",
     "ForecastSummary",
+    "DashboardTotals",
     "DashboardResponse",
     "LeadTimeUpdate",
     "LeadTimeResponse",

@@ -15,6 +15,7 @@ class ForecastItem(BaseModel):
     product_category: str | None = None
     top_channel: str | None = None
     total_sold_90d: int = 0
+    total_revenue_90d: float = 0.0
 
 
 class ForecastSummary(BaseModel):
@@ -26,12 +27,19 @@ class ForecastSummary(BaseModel):
     total_value_at_risk: float = 0.0
 
 
+class DashboardTotals(BaseModel):
+    on_hand: int = 0
+    total_sold_90d: int = 0
+    total_revenue_90d: float = 0.0
+
+
 class DashboardResponse(BaseModel):
     items: list[ForecastItem]
     total: int
     page: int
     page_size: int
     summary: ForecastSummary
+    totals: DashboardTotals = DashboardTotals()
 
 
 class LeadTimeUpdate(BaseModel):

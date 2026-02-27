@@ -5,6 +5,7 @@ from models import (
     ForecastItem,
     ForecastSummary,
     DashboardResponse,
+    DashboardTotals,
     MonthlySales,
     ChannelBreakdown,
     RecentOrder,
@@ -92,9 +93,16 @@ def get_dashboard(
             product_category=r["product_category"] or None,
             top_channel=r["top_channel"] or None,
             total_sold_90d=int(r["total_sold_90d"]),
+            total_revenue_90d=round(r.get("total_revenue_90d", 0) or 0, 2),
         )
         for _, r in page_df.iterrows()
     ]
+
+    totals = DashboardTotals(
+        on_hand=int(df["on_hand"].sum()),
+        total_sold_90d=int(df["total_sold_90d"].sum()),
+        total_revenue_90d=round(float(df["total_revenue_90d"].sum()), 2),
+    )
 
     return DashboardResponse(
         items=items,
@@ -102,6 +110,7 @@ def get_dashboard(
         page=page,
         page_size=page_size,
         summary=summary,
+        totals=totals,
     )
 
 

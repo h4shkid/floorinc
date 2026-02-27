@@ -12,6 +12,13 @@ export interface ForecastItem {
   product_category: string | null;
   top_channel: string | null;
   total_sold_90d: number;
+  total_revenue_90d: number;
+}
+
+export interface DashboardTotals {
+  on_hand: number;
+  total_sold_90d: number;
+  total_revenue_90d: number;
 }
 
 export interface ForecastSummary {
@@ -29,6 +36,7 @@ export interface DashboardResponse {
   page: number;
   page_size: number;
   summary: ForecastSummary;
+  totals: DashboardTotals;
 }
 
 export interface DashboardParams {

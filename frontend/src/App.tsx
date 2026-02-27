@@ -164,6 +164,7 @@ function AuthenticatedApp() {
                   onSort={toggleSort}
                   onRowClick={setSelectedSku}
                   onLeadTimeChanged={reload}
+                  totals={data.totals}
                 />
                 <Pagination
                   page={data.page}

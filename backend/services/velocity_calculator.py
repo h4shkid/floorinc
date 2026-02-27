@@ -7,7 +7,8 @@ def calculate_velocities(window_days: int = 90) -> pd.DataFrame:
     conn = get_connection()
 
     query = """
-        SELECT sku, SUM(quantity) as total_qty, COUNT(DISTINCT order_date) as active_days
+        SELECT sku, SUM(quantity) as total_qty, COUNT(DISTINCT order_date) as active_days,
+               COALESCE(SUM(item_revenue), 0) as total_revenue
         FROM sales
         WHERE order_date >= date('now', ?)
         GROUP BY sku
@@ -17,7 +18,7 @@ def calculate_velocities(window_days: int = 90) -> pd.DataFrame:
 
     df["velocity"] = df["total_qty"] / window_days
     df = df.rename(columns={"total_qty": "total_sold"})
-    return df[["sku", "total_sold", "velocity"]]
+    return df[["sku", "total_sold", "velocity", "total_revenue"]]
 
 
 def get_top_channels() -> pd.DataFrame:
