@@ -221,7 +221,7 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
 
               {/* Revenue 90d */}
               <td className="px-2 py-1.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
-                ${item.total_revenue_90d.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                ${(item.total_revenue_90d ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </td>
             </tr>
           ))}
@@ -239,7 +239,7 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
               <td className="px-2 py-2" />
               <td className="px-2 py-2" />
               <td className="px-2 py-2 text-right tabular-nums">{totals.total_sold_90d.toLocaleString()}</td>
-              <td className="px-2 py-2 text-right tabular-nums">${totals.total_revenue_90d.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
+              <td className="px-2 py-2 text-right tabular-nums">${(totals.total_revenue_90d ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
             </tr>
           </tfoot>
         )}
