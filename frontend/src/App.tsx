@@ -77,8 +77,7 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
   );
 }
 
-function App() {
-  const [authenticated, setAuthenticated] = useState(() => !!localStorage.getItem("app_password"));
+function AuthenticatedApp() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(getInitialDark);
@@ -88,10 +87,6 @@ function App() {
     document.documentElement.classList.toggle("dark", darkMode);
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
-
-  if (!authenticated) {
-    return <LoginGate onAuth={() => setAuthenticated(true)} />;
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -194,6 +189,16 @@ function App() {
       )}
     </div>
   );
+}
+
+function App() {
+  const [authenticated, setAuthenticated] = useState(() => !!localStorage.getItem("app_password"));
+
+  if (!authenticated) {
+    return <LoginGate onAuth={() => setAuthenticated(true)} />;
+  }
+
+  return <AuthenticatedApp />;
 }
 
 export default App;
