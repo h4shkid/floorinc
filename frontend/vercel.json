@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://RENDER_URL_HERE.onrender.com/api/:path*"
+      "destination": "https://flooringinc.onrender.com/api/:path*"
     }
   ]
 }
