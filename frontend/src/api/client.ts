@@ -3,7 +3,15 @@ import type { DashboardResponse, DashboardParams, LeadTime, ImportResult, SKUDet
 const BASE = import.meta.env.VITE_API_URL || "/api";
 
 async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
+  const password = localStorage.getItem("app_password") || "";
+  const headers = new Headers(init?.headers);
+  headers.set("X-Auth-Token", password);
+  const res = await fetch(url, { ...init, headers });
+  if (res.status === 401) {
+    localStorage.removeItem("app_password");
+    window.location.reload();
+    throw new Error("Unauthorized");
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`${res.status}: ${text}`);

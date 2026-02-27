@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useForecast } from "./hooks/useForecast";
 import { SummaryCards } from "./components/Dashboard/SummaryCards";
 import { ForecastTable } from "./components/Dashboard/ForecastTable";
@@ -9,13 +9,76 @@ import { ImportPage } from "./components/Import/ImportPage";
 
 type Tab = "dashboard" | "import";
 
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
+
 function getInitialDark(): boolean {
   const stored = localStorage.getItem("theme");
   if (stored) return stored === "dark";
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
+function LoginGate({ onAuth }: { onAuth: () => void }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/verify`, {
+        headers: { "X-Auth-Token": password },
+      });
+      if (res.status === 401) {
+        setError("Wrong password");
+      } else {
+        localStorage.setItem("app_password", password);
+        onAuth();
+      }
+    } catch {
+      setError("Cannot reach server");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8 space-y-5"
+      >
+        <div className="text-center">
+          <img src="/logo.png" alt="FlooringInc" className="h-10 mx-auto mb-3" />
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Inventory Forecast
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Enter team password to continue</p>
+        </div>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          autoFocus
+        />
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        <button
+          type="submit"
+          disabled={loading || !password}
+          className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+        >
+          {loading ? "Checking..." : "Sign In"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function App() {
+  const [authenticated, setAuthenticated] = useState(() => !!localStorage.getItem("app_password"));
   const [tab, setTab] = useState<Tab>("dashboard");
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(getInitialDark);
@@ -25,6 +88,10 @@ function App() {
     document.documentElement.classList.toggle("dark", darkMode);
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
+
+  if (!authenticated) {
+    return <LoginGate onAuth={() => setAuthenticated(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
