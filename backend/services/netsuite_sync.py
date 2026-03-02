@@ -124,7 +124,6 @@ def sync_sales(progress_callback=None):
           AND tl.itemType = 'InvtPart'
           AND t.tranDate >= ADD_MONTHS(SYSDATE, -18)
           AND tl.quantity < 0
-        ORDER BY t.tranDate DESC
     """
 
     def sales_progress(fetched, total):

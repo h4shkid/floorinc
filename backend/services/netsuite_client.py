@@ -37,9 +37,9 @@ def _suiteql_url() -> str:
     return f"https://{account}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
 
-def execute_suiteql(query: str, limit: int = 1000, offset: int = 0) -> dict:
-    session = _get_session()
-    resp = session.post(
+def execute_suiteql(query: str, limit: int = 1000, offset: int = 0, session: OAuth1Session | None = None) -> dict:
+    s = session or _get_session()
+    resp = s.post(
         _suiteql_url(),
         headers={
             "Content-Type": "application/json",
@@ -60,9 +60,10 @@ def execute_suiteql_paginated(
     offset = 0
     limit = 1000
     total = None
+    session = _get_session()
 
     while True:
-        data = execute_suiteql(query, limit=limit, offset=offset)
+        data = execute_suiteql(query, limit=limit, offset=offset, session=session)
         items = data.get("items", [])
         all_items.extend(items)
 
