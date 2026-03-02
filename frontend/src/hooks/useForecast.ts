@@ -11,6 +11,7 @@ const DEFAULT_PARAMS: DashboardParams = {
   urgency: "",
   channel: "",
   category: "",
+  manufacturer: "",
   velocity_window: 90,
   active_only: true,
 };

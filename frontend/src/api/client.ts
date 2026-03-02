@@ -29,6 +29,7 @@ export async function fetchDashboard(params: Partial<DashboardParams> = {}): Pro
   if (params.urgency) p.set("urgency", params.urgency);
   if (params.channel) p.set("channel", params.channel);
   if (params.category) p.set("category", params.category);
+  if (params.manufacturer) p.set("manufacturer", params.manufacturer);
   if (params.velocity_window) p.set("velocity_window", String(params.velocity_window));
   if (params.active_only !== undefined) p.set("active_only", String(params.active_only));
   return fetchJSON<DashboardResponse>(`${BASE}/forecast/dashboard?${p}`);

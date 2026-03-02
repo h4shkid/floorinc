@@ -19,7 +19,7 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
 
     # 1. Inventory (non-sample)
     inv_df = pd.read_sql_query(
-        "SELECT sku, display_name, on_hand FROM inventory WHERE is_sample = 0",
+        "SELECT sku, display_name, on_hand, manufacturer FROM inventory WHERE is_sample = 0",
         conn,
     )
 
@@ -58,6 +58,7 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
     df["lead_time_days"] = df["lead_time_days"].fillna(DEFAULT_LEAD_TIME_DAYS).astype(int)
     df["top_channel"] = df["top_channel"].fillna("")
     df["product_category"] = df["product_category"].fillna("")
+    df["manufacturer"] = df["manufacturer"].fillna("")
 
     # 5. Adjusted velocity & days remaining
     df["adjusted_velocity"] = df["velocity"] * df["seasonality_factor"]

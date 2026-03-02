@@ -16,6 +16,7 @@ class ForecastItem(BaseModel):
     top_channel: str | None = None
     total_sold_90d: int = 0
     total_revenue_90d: float = 0.0
+    manufacturer: str | None = None
 
 
 class ForecastSummary(BaseModel):
@@ -91,6 +92,7 @@ class SKUDetailResponse(BaseModel):
     adjusted_velocity: float
     days_remaining: float | None
     product_category: str | None
+    manufacturer: str | None = None
     monthly_sales: list[MonthlySales]
     channel_breakdown: list[ChannelBreakdown]
     recent_orders: list[RecentOrder]

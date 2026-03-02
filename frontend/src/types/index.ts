@@ -13,6 +13,7 @@ export interface ForecastItem {
   top_channel: string | null;
   total_sold_90d: number;
   total_revenue_90d: number;
+  manufacturer: string | null;
 }
 
 export interface DashboardTotals {
@@ -48,6 +49,7 @@ export interface DashboardParams {
   urgency: string;
   channel: string;
   category: string;
+  manufacturer: string;
   velocity_window: number;
   active_only: boolean;
 }
@@ -96,6 +98,7 @@ export interface SKUDetail {
   adjusted_velocity: number;
   days_remaining: number | null;
   product_category: string | null;
+  manufacturer: string | null;
   monthly_sales: MonthlySales[];
   channel_breakdown: ChannelBreakdown[];
   recent_orders: RecentOrder[];

@@ -5,16 +5,28 @@ from config import DATA_DIR
 
 def import_inventory(csv_path: str | None = None) -> dict:
     path = csv_path or str(DATA_DIR / "inventory.csv")
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, encoding="latin-1")
 
-    # Columns: Name, Display Name, Location On Hand, On Hand, Location Available
-    df = df.rename(columns={
-        "Name": "sku",
-        "Display Name": "display_name",
-        "On Hand": "on_hand",
-    })
+    # Auto-detect CSV format by checking column headers
+    if "Item Name" in df.columns:
+        # "Items for Mert" format: Item Name, Display Name, Available, Preferred Vendor
+        df = df.rename(columns={
+            "Item Name": "sku",
+            "Display Name": "display_name",
+            "Available": "on_hand",
+            "Preferred Vendor": "manufacturer",
+        })
+        df["manufacturer"] = df["manufacturer"].fillna("")
+    else:
+        # Standard inventory format: Name, Display Name, On Hand
+        df = df.rename(columns={
+            "Name": "sku",
+            "Display Name": "display_name",
+            "On Hand": "on_hand",
+        })
+        df["manufacturer"] = ""
 
-    df = df[["sku", "display_name", "on_hand"]].copy()
+    df = df[["sku", "display_name", "on_hand", "manufacturer"]].copy()
     df["on_hand"] = pd.to_numeric(df["on_hand"], errors="coerce").fillna(0).astype(int)
     df["display_name"] = df["display_name"].fillna(df["sku"])
 
@@ -31,7 +43,7 @@ def import_inventory(csv_path: str | None = None) -> dict:
     conn.execute("DELETE FROM inventory")
     rows = df.to_dict("records")
     conn.executemany(
-        "INSERT INTO inventory (sku, display_name, on_hand, is_sample) VALUES (:sku, :display_name, :on_hand, :is_sample)",
+        "INSERT INTO inventory (sku, display_name, on_hand, is_sample, manufacturer) VALUES (:sku, :display_name, :on_hand, :is_sample, :manufacturer)",
         rows,
     )
     conn.commit()

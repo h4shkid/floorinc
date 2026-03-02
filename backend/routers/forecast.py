@@ -36,6 +36,7 @@ def get_dashboard(
     urgency: str = Query("", description="RED,YELLOW,GREEN filter"),
     channel: str = Query("", description="Channel filter"),
     category: str = Query("", description="Product category filter"),
+    manufacturer: str = Query("", description="Manufacturer/vendor filter"),
     velocity_window: int = Query(90, ge=7, le=365),
     active_only: bool = Query(True, description="Only show SKUs with sales activity"),
 ):
@@ -46,6 +47,7 @@ def get_dashboard(
         mask = (
             df["sku"].str.contains(search, case=False, na=False)
             | df["display_name"].str.contains(search, case=False, na=False)
+            | df["manufacturer"].str.contains(search, case=False, na=False)
         )
         df = df[mask]
 
@@ -58,6 +60,9 @@ def get_dashboard(
 
     if category:
         df = df[df["product_category"].str.contains(category, case=False, na=False)]
+
+    if manufacturer:
+        df = df[df["manufacturer"].str.contains(manufacturer, case=False, na=False)]
 
     # Summary (after filters)
     summary = ForecastSummary(
@@ -94,6 +99,7 @@ def get_dashboard(
             top_channel=r["top_channel"] or None,
             total_sold_90d=int(r["total_sold_90d"]),
             total_revenue_90d=round(r.get("total_revenue_90d", 0) or 0, 2),
+            manufacturer=r["manufacturer"] or None,
         )
         for _, r in page_df.iterrows()
     ]
@@ -229,6 +235,7 @@ def get_sku_detail(sku: str):
         adjusted_velocity=_safe_float(r["adjusted_velocity"], 3) or 0.0,
         days_remaining=_safe_float(r["days_remaining"], 1),
         product_category=r["product_category"] or None,
+        manufacturer=r["manufacturer"] or None,
         monthly_sales=monthly_sales,
         channel_breakdown=channel_breakdown,
         recent_orders=recent_orders,

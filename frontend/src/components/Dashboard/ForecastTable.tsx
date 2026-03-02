@@ -34,6 +34,7 @@ function shortChannel(ch: string | null): string {
 const COLUMNS = [
   { key: "urgency", label: "", tooltip: "", align: "left" },
   { key: "display_name", label: "Product", tooltip: "Product name and SKU", align: "left" },
+  { key: "manufacturer", label: "Mfr", tooltip: "Manufacturer — Preferred vendor/manufacturer for this product", align: "left" },
   { key: "top_channel", label: "Ch", tooltip: "Channel — Top sales channel for this SKU (FI = FlooringInc website, AVC = Amazon Vendor Central, ASC = Amazon Seller Central, HD = Home Depot, WF = Wayfair, WM = Walmart)", align: "center" },
   { key: "on_hand", label: "On Hand", tooltip: "On Hand — Current inventory units in Tennessee warehouse. Negative = backorder (orders received but no stock to fulfill)", align: "right" },
   { key: "velocity", label: "Vel/d", tooltip: "Velocity per Day — Average units sold per day over the selected velocity window (default 90 days)", align: "right" },
@@ -122,7 +123,8 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
       <table className="w-full text-[13px] table-fixed">
         <colgroup>
           <col className="w-14" />       {/* urgency badge */}
-          <col style={{ width: "40%" }} /> {/* product - takes remaining space */}
+          <col style={{ width: "35%" }} /> {/* product - takes remaining space */}
+          <col className="w-28" />        {/* manufacturer */}
           <col className="w-14" />        {/* channel */}
           <col className="w-20" />        {/* on hand */}
           <col className="w-16" />        {/* vel/d */}
@@ -169,6 +171,13 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
                 <div className="truncate text-[11px] text-slate-400 dark:text-slate-500 font-mono leading-tight">
                   {item.sku}
                 </div>
+              </td>
+
+              {/* Manufacturer */}
+              <td className="px-2 py-1.5 overflow-hidden">
+                <span className="truncate block text-xs text-slate-600 dark:text-slate-400" title={item.manufacturer || ""}>
+                  {item.manufacturer || "-"}
+                </span>
               </td>
 
               {/* Channel */}
@@ -231,6 +240,7 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
             <tr className="bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600 font-semibold text-slate-900 dark:text-slate-100">
               <td className="px-2 py-2" />
               <td className="px-2 py-2 text-xs uppercase tracking-wide">Totals</td>
+              <td className="px-2 py-2" />
               <td className="px-2 py-2" />
               <td className="px-2 py-2 text-right tabular-nums">{totals.on_hand.toLocaleString()}</td>
               <td className="px-2 py-2" />

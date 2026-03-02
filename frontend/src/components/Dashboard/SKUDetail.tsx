@@ -126,6 +126,9 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
               {data.product_category && (
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{data.product_category}</p>
               )}
+              {data.manufacturer && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{data.manufacturer}</p>
+              )}
             </div>
 
             {/* Status cards */}

@@ -81,4 +81,12 @@ def init_db():
         );
     """)
     conn.commit()
+
+    # Migrations — add columns to existing tables
+    try:
+        conn.execute("ALTER TABLE inventory ADD COLUMN manufacturer TEXT DEFAULT ''")
+        conn.commit()
+    except Exception:
+        pass  # Column already exists
+
     conn.close()

@@ -82,6 +82,18 @@ export function FilterBar({ params, onChange }: Props) {
         </select>
       </div>
 
+      {/* Manufacturer */}
+      <div className="min-w-40">
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Manufacturer</label>
+        <input
+          type="text"
+          placeholder="Filter by manufacturer..."
+          value={params.manufacturer}
+          onChange={(e) => onChange({ manufacturer: e.target.value })}
+          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400"
+        />
+      </div>
+
       {/* Category */}
       <div>
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Category</label>
