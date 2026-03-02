@@ -52,7 +52,7 @@ def sync_inventory(progress_callback=None):
         inv_map[sku] = {
             "sku": sku,
             "display_name": r.get("display_name") or sku,
-            "on_hand": int(r.get("on_hand") or 0),
+            "on_hand": int(float(r.get("on_hand") or 0)),
         }
 
     # Query 2: vendor/manufacturer names
@@ -142,7 +142,7 @@ def sync_sales(progress_callback=None):
         records.append({
             "order_date": r.get("order_date", ""),
             "sku": sku,
-            "quantity": int(r.get("quantity") or 0),
+            "quantity": int(float(r.get("quantity") or 0)),
             "channel": _map_channel(r.get("channel")),
             "product_category": None,
             "item_revenue": float(r.get("item_revenue") or 0),
