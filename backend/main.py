@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from database import init_db, sync_from_turso
-from routers import forecast, lead_times, import_data
+from routers import forecast, lead_times, import_data, netsuite
 
 CORS_ORIGINS = os.environ.get(
     "CORS_ORIGINS", "http://localhost:5173,http://localhost:3000"
@@ -34,6 +34,7 @@ async def auth_middleware(request: Request, call_next):
 app.include_router(forecast.router)
 app.include_router(lead_times.router)
 app.include_router(import_data.router)
+app.include_router(netsuite.router)
 
 
 @app.on_event("startup")

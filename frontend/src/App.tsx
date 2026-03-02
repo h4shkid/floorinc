@@ -112,7 +112,7 @@ function AuthenticatedApp() {
                       : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
                   }`}
                 >
-                  {t === "dashboard" ? "Dashboard" : "Import Data"}
+                  {t === "dashboard" ? "Dashboard" : "Data Sync"}
                 </button>
               ))}
             </nav>
@@ -179,7 +179,7 @@ function AuthenticatedApp() {
 
         {tab === "import" && (
           <div>
-            <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">Import Data</h2>
+            <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">Data Sync</h2>
             <ImportPage />
           </div>
         )}

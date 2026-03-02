@@ -1,4 +1,4 @@
-import type { DashboardResponse, DashboardParams, LeadTime, ImportResult, SKUDetail } from "../types";
+import type { DashboardResponse, DashboardParams, LeadTime, ImportResult, SKUDetail, SyncStatus } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -61,4 +61,12 @@ export async function fetchManufacturers(): Promise<string[]> {
 
 export async function fetchSKUDetail(sku: string): Promise<SKUDetail> {
   return fetchJSON<SKUDetail>(`${BASE}/forecast/${encodeURIComponent(sku)}/detail`);
+}
+
+export async function fetchSyncStatus(): Promise<SyncStatus> {
+  return fetchJSON<SyncStatus>(`${BASE}/netsuite/status`);
+}
+
+export async function triggerNetSuiteSync(): Promise<{ message: string }> {
+  return fetchJSON<{ message: string }>(`${BASE}/netsuite/sync`, { method: "POST" });
 }

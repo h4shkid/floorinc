@@ -68,6 +68,16 @@ export interface ImportResult {
   message: string;
 }
 
+export interface SyncStatus {
+  state: "idle" | "running" | "completed" | "error";
+  phase: string;
+  progress: number;
+  message: string;
+  last_sync_at: string | null;
+  error: string | null;
+  configured: boolean;
+}
+
 export interface MonthlySales {
   month: string;
   quantity: number;
