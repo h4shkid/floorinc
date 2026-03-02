@@ -5,8 +5,8 @@ import { fetchDashboard } from "../api/client";
 const DEFAULT_PARAMS: DashboardParams = {
   page: 1,
   page_size: 50,
-  sort_by: "priority_score",
-  sort_dir: "asc",
+  sort_by: "total_revenue_90d",
+  sort_dir: "desc",
   search: "",
   urgency: "",
   channel: "",
