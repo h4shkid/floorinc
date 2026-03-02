@@ -34,7 +34,7 @@ def _get_session() -> OAuth1Session:
 
 def _suiteql_url() -> str:
     account = NETSUITE_ACCOUNT_ID.replace("_", "-").lower()
-    return f"https://{account}.suitetalk.api.netsuite.com/services/rest/record/v1/suiteql"
+    return f"https://{account}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
 
 def execute_suiteql(query: str, limit: int = 1000, offset: int = 0) -> dict:
