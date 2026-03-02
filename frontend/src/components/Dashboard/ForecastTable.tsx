@@ -34,7 +34,7 @@ function shortChannel(ch: string | null): string {
 const COLUMNS = [
   { key: "urgency", label: "", tooltip: "", align: "left" },
   { key: "display_name", label: "Product", tooltip: "Product name and SKU", align: "left" },
-  { key: "manufacturer", label: "Mfr", tooltip: "Manufacturer — Preferred vendor/manufacturer for this product", align: "left" },
+  { key: "manufacturer", label: "Manufacturer", tooltip: "Manufacturer — Preferred vendor/manufacturer for this product", align: "left" },
   { key: "top_channel", label: "Ch", tooltip: "Channel — Top sales channel for this SKU (FI = FlooringInc website, AVC = Amazon Vendor Central, ASC = Amazon Seller Central, HD = Home Depot, WF = Wayfair, WM = Walmart)", align: "center" },
   { key: "on_hand", label: "On Hand", tooltip: "On Hand — Current inventory units in Tennessee warehouse. Negative = backorder (orders received but no stock to fulfill)", align: "right" },
   { key: "velocity", label: "Vel/d", tooltip: "Velocity per Day — Average units sold per day over the selected velocity window (default 90 days)", align: "right" },
