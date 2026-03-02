@@ -107,9 +107,23 @@ def sync_inventory(progress_callback=None):
 
 
 def sync_sales(progress_callback=None):
-    """Pull sales from NetSuite: last 18 months of transaction lines."""
+    """Pull sales from NetSuite. Incremental: only fetches records newer than what's already in DB."""
 
-    sales_query = """
+    # Check the latest order_date we already have
+    conn = get_connection()
+    row = conn.execute("SELECT MAX(order_date) FROM sales").fetchone()
+    last_date = row[0] if row and row[0] else None
+    conn.close()
+
+    if last_date:
+        # Incremental sync — only fetch sales after the last date we have
+        # Delete records from last_date to avoid duplicates (partial day)
+        date_filter = f"AND t.tranDate >= TO_DATE('{last_date}', 'YYYY-MM-DD')"
+    else:
+        # First sync — fetch last 18 months
+        date_filter = "AND t.tranDate >= ADD_MONTHS(SYSDATE, -18)"
+
+    sales_query = f"""
         SELECT
             TO_CHAR(t.tranDate, 'YYYY-MM-DD') AS order_date,
             item.itemId AS sku,
@@ -122,7 +136,7 @@ def sync_sales(progress_callback=None):
         JOIN item ON item.id = tl.item
         WHERE tl.mainLine = 'F'
           AND tl.itemType = 'InvtPart'
-          AND t.tranDate >= ADD_MONTHS(SYSDATE, -18)
+          {date_filter}
           AND tl.quantity < 0
     """
 
@@ -150,7 +164,11 @@ def sync_sales(progress_callback=None):
         })
 
     conn = get_connection()
-    conn.execute("DELETE FROM sales")
+    if last_date:
+        # Remove records from last_date onward to avoid duplicates, then insert fresh
+        conn.execute("DELETE FROM sales WHERE order_date >= ?", (last_date,))
+    else:
+        conn.execute("DELETE FROM sales")
     conn.executemany(
         """INSERT INTO sales (order_date, sku, quantity, channel, product_category, item_revenue, product_cost, product_name)
            VALUES (:order_date, :sku, :quantity, :channel, :product_category, :item_revenue, :product_cost, :product_name)""",
@@ -180,7 +198,7 @@ def run_full_sync():
         sync_to_turso()
 
         sync_status.complete(
-            f"Synced {inv_count:,} inventory items and {sales_count:,} sales records"
+            f"Synced {inv_count:,} inventory items and {sales_count:,} new sales records"
         )
     except Exception as e:
         sync_status.fail(str(e))
