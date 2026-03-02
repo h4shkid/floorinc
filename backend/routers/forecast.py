@@ -26,6 +26,16 @@ def _safe_float(val, decimals=1):
 router = APIRouter(prefix="/api/forecast", tags=["forecast"])
 
 
+@router.get("/manufacturers", response_model=list[str])
+def get_manufacturers():
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT DISTINCT manufacturer FROM inventory WHERE manufacturer != '' ORDER BY manufacturer"
+    ).fetchall()
+    conn.close()
+    return [r["manufacturer"] for r in rows]
+
+
 @router.get("/dashboard", response_model=DashboardResponse)
 def get_dashboard(
     page: int = Query(1, ge=1),

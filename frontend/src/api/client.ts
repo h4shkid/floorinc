@@ -55,6 +55,10 @@ export async function uploadCSV(type: "inventory" | "sales", file: File): Promis
   return fetchJSON<ImportResult>(`${BASE}/import/${type}`, { method: "POST", body: form });
 }
 
+export async function fetchManufacturers(): Promise<string[]> {
+  return fetchJSON<string[]>(`${BASE}/forecast/manufacturers`);
+}
+
 export async function fetchSKUDetail(sku: string): Promise<SKUDetail> {
   return fetchJSON<SKUDetail>(`${BASE}/forecast/${encodeURIComponent(sku)}/detail`);
 }
