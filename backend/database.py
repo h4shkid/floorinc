@@ -6,6 +6,8 @@ TURSO_URL = os.environ.get("TURSO_DATABASE_URL")
 TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN")
 _LOCAL_REPLICA = "/tmp/forecast.db"
 
+SYNC_TABLES = ["inventory", "sales", "lead_times", "sku_insights"]
+
 
 def sync_from_turso():
     """Pull latest data from Turso into a local SQLite replica."""
@@ -18,7 +20,6 @@ def sync_from_turso():
         path = _LOCAL_REPLICA + suffix
         if os.path.exists(path):
             try:
-                # Quick integrity check
                 if suffix == "":
                     c = sqlite3.connect(path)
                     c.execute("PRAGMA integrity_check")
@@ -34,14 +35,44 @@ def sync_from_turso():
 
 
 def sync_to_turso():
-    """Push local changes back to Turso."""
+    """Push local SQLite data to Turso by reading local and writing to remote."""
     if not TURSO_URL:
         return
     import libsql_experimental as libsql
 
-    conn = libsql.connect(_LOCAL_REPLICA, sync_url=TURSO_URL, auth_token=TURSO_TOKEN)
-    conn.sync()
-    conn.close()
+    local = sqlite3.connect(_LOCAL_REPLICA)
+    local.row_factory = sqlite3.Row
+    remote = libsql.connect(TURSO_URL, auth_token=TURSO_TOKEN)
+
+    for table in SYNC_TABLES:
+        # Get column names
+        cols_info = local.execute(f"PRAGMA table_info({table})").fetchall()
+        if not cols_info:
+            continue
+        col_names = [c["name"] for c in cols_info]
+        placeholders = ", ".join(["?" for _ in col_names])
+        col_list = ", ".join(col_names)
+
+        # Clear remote table
+        remote.execute(f"DELETE FROM {table}")
+
+        # Read local and write to remote in batches
+        cursor = local.execute(f"SELECT {col_list} FROM {table}")
+        batch_size = 5000
+        while True:
+            rows = cursor.fetchmany(batch_size)
+            if not rows:
+                break
+            values = [tuple(row) for row in rows]
+            remote.executemany(
+                f"INSERT INTO {table} ({col_list}) VALUES ({placeholders})",
+                values,
+            )
+        remote.commit()
+
+    local.close()
+    remote.close()
+    print("Pushed local data → Turso")
 
 
 def get_connection() -> sqlite3.Connection:
