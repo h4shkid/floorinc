@@ -13,6 +13,20 @@ def sync_from_turso():
         return
     import libsql_experimental as libsql
 
+    # Delete corrupted replica if it exists
+    for suffix in ("", "-wal", "-shm"):
+        path = _LOCAL_REPLICA + suffix
+        if os.path.exists(path):
+            try:
+                # Quick integrity check
+                if suffix == "":
+                    c = sqlite3.connect(path)
+                    c.execute("PRAGMA integrity_check")
+                    c.close()
+            except Exception:
+                print(f"Corrupted replica detected, removing {path}")
+                os.remove(path)
+
     conn = libsql.connect(_LOCAL_REPLICA, sync_url=TURSO_URL, auth_token=TURSO_TOKEN)
     conn.sync()
     conn.close()
