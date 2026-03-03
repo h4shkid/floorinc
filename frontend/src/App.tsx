@@ -6,6 +6,8 @@ import { SKUDetailPanel } from "./components/Dashboard/SKUDetail";
 import { FilterBar } from "./components/Filters/FilterBar";
 import { Pagination } from "./components/Filters/Pagination";
 import { ImportPage } from "./components/Import/ImportPage";
+import { fetchDataStats, fetchSyncStatus } from "./api/client";
+import type { DataStats, SyncStatus } from "./types";
 
 type Tab = "dashboard" | "import";
 
@@ -77,16 +79,64 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
   );
 }
 
+function DataStatsBar({ stats, lastSync }: { stats: DataStats | null; lastSync: string | null }) {
+  if (!stats || !stats.total_transactions) return null;
+
+  return (
+    <div className="bg-slate-100 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 px-6 py-2">
+      <div className="max-w-[1600px] mx-auto flex items-center gap-6 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+        <span className="flex items-center gap-1.5">
+          <span className="font-medium text-slate-700 dark:text-slate-300">{stats.inventory_skus.toLocaleString()}</span> SKUs
+        </span>
+        <span className="text-slate-300 dark:text-slate-600">|</span>
+        <span className="flex items-center gap-1.5">
+          <span className="font-medium text-slate-700 dark:text-slate-300">{stats.total_transactions.toLocaleString()}</span> transactions
+        </span>
+        <span className="text-slate-300 dark:text-slate-600">|</span>
+        <span className="flex items-center gap-1.5">
+          <span className="font-medium text-slate-700 dark:text-slate-300">{stats.skus_with_sales.toLocaleString()}</span> SKUs with sales
+        </span>
+        <span className="text-slate-300 dark:text-slate-600">|</span>
+        <span className="flex items-center gap-1.5">
+          <span className="font-medium text-slate-700 dark:text-slate-300">{stats.channels}</span> channels
+        </span>
+        <span className="text-slate-300 dark:text-slate-600">|</span>
+        <span>
+          <span className="font-medium text-slate-700 dark:text-slate-300">{stats.months}</span> months of data
+          {stats.date_from && stats.date_to && (
+            <span className="ml-1">({stats.date_from} to {stats.date_to})</span>
+          )}
+        </span>
+        {lastSync && (
+          <>
+            <span className="text-slate-300 dark:text-slate-600">|</span>
+            <span>
+              Last sync: <span className="font-medium text-slate-700 dark:text-slate-300">{new Date(lastSync).toLocaleString()}</span>
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AuthenticatedApp() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(getInitialDark);
+  const [dataStats, setDataStats] = useState<DataStats | null>(null);
+  const [lastSync, setLastSync] = useState<string | null>(null);
   const { data, loading, error, params, updateParams, toggleSort, reload } = useForecast();
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
+
+  useEffect(() => {
+    fetchDataStats().then(setDataStats).catch(() => {});
+    fetchSyncStatus().then((s: SyncStatus) => setLastSync(s.last_sync_at)).catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -134,6 +184,8 @@ function AuthenticatedApp() {
           </div>
         </div>
       </header>
+
+      <DataStatsBar stats={dataStats} lastSync={lastSync} />
 
       {/* Main */}
       <main className="max-w-[1600px] mx-auto px-6 py-6">

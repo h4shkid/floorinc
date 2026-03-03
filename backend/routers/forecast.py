@@ -26,6 +26,49 @@ def _safe_float(val, decimals=1):
 router = APIRouter(prefix="/api/forecast", tags=["forecast"])
 
 
+@router.get("/data-stats")
+def get_data_stats():
+    conn = get_connection()
+    inv_count = conn.execute("SELECT COUNT(*) FROM inventory WHERE is_sample = 0").fetchone()[0]
+    sales_count = conn.execute("SELECT COUNT(*) FROM sales").fetchone()[0]
+    sku_with_sales = conn.execute(
+        "SELECT COUNT(DISTINCT sku) FROM sales"
+    ).fetchone()[0]
+
+    date_row = conn.execute(
+        "SELECT MIN(order_date) as min_date, MAX(order_date) as max_date FROM sales"
+    ).fetchone()
+    min_date = date_row["min_date"]
+    max_date = date_row["max_date"]
+
+    channel_count = conn.execute(
+        "SELECT COUNT(DISTINCT channel) FROM sales WHERE channel IS NOT NULL"
+    ).fetchone()[0]
+
+    conn.close()
+
+    months = 0
+    days = 0
+    if min_date and max_date:
+        from datetime import date as dt_date
+        d1 = dt_date.fromisoformat(min_date)
+        d2 = dt_date.fromisoformat(max_date)
+        delta = d2 - d1
+        days = delta.days
+        months = round(days / 30.44)
+
+    return {
+        "inventory_skus": inv_count,
+        "total_transactions": sales_count,
+        "skus_with_sales": sku_with_sales,
+        "channels": channel_count,
+        "date_from": min_date,
+        "date_to": max_date,
+        "months": months,
+        "days": days,
+    }
+
+
 @router.get("/manufacturers", response_model=list[str])
 def get_manufacturers():
     conn = get_connection()

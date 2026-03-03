@@ -1,4 +1,4 @@
-import type { DashboardResponse, DashboardParams, LeadTime, ImportResult, SKUDetail, SyncStatus } from "../types";
+import type { DashboardResponse, DashboardParams, LeadTime, ImportResult, SKUDetail, SyncStatus, DataStats } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -73,4 +73,8 @@ export async function triggerNetSuiteSync(): Promise<{ message: string }> {
 
 export async function triggerSalesSync(): Promise<{ message: string }> {
   return fetchJSON<{ message: string }>(`${BASE}/netsuite/sync/sales`, { method: "POST" });
+}
+
+export async function fetchDataStats(): Promise<DataStats> {
+  return fetchJSON<DataStats>(`${BASE}/forecast/data-stats`);
 }

@@ -68,6 +68,17 @@ export interface ImportResult {
   message: string;
 }
 
+export interface DataStats {
+  inventory_skus: number;
+  total_transactions: number;
+  skus_with_sales: number;
+  channels: number;
+  date_from: string | null;
+  date_to: string | null;
+  months: number;
+  days: number;
+}
+
 export interface SyncStatus {
   state: "idle" | "running" | "completed" | "error";
   phase: string;
