@@ -70,3 +70,7 @@ export async function fetchSyncStatus(): Promise<SyncStatus> {
 export async function triggerNetSuiteSync(): Promise<{ message: string }> {
   return fetchJSON<{ message: string }>(`${BASE}/netsuite/sync`, { method: "POST" });
 }
+
+export async function triggerSalesSync(): Promise<{ message: string }> {
+  return fetchJSON<{ message: string }>(`${BASE}/netsuite/sync/sales`, { method: "POST" });
+}

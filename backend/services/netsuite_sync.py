@@ -225,3 +225,23 @@ def run_full_sync():
     except Exception as e:
         sync_status.fail(str(e))
         raise
+
+
+def run_sales_sync():
+    """Run sales-only sync with status tracking."""
+    try:
+        sync_status.start()
+
+        def progress(phase, pct, msg):
+            sync_status.update(phase, pct, msg)
+
+        sync_status.update("sales", 0, "Syncing sales from NetSuite...")
+        sales_count = sync_sales(progress_callback=lambda phase, pct, msg: progress(phase, int(pct / 98 * 100), msg))
+
+        sync_status.update("turso", 98, "Syncing to cloud database...")
+        sync_to_turso()
+
+        sync_status.complete(f"Synced {sales_count:,} new sales records")
+    except Exception as e:
+        sync_status.fail(str(e))
+        raise
