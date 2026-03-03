@@ -11,12 +11,9 @@ interface Props {
 const CHANNEL_SHORT: Record<string, string> = {
   "Amazon Vendor Central": "AVC",
   "Amazon Seller Central": "ASC",
-  "Amazon": "AMZ",
   "FI": "FI",
-  "HomeDepot": "HD",
   "Home Depot": "HD",
   "Wayfair": "WF",
-  "Walmart - Seller Fulfilled": "WM",
   "Walmart": "WM",
   "eBay": "eBay",
 };

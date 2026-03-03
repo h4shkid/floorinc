@@ -72,10 +72,8 @@ CHANNEL_MAP = {
     "FI": "FlooringInc.com (direct website)",
     "Amazon Vendor Central": "Amazon Vendor Central",
     "Amazon Seller Central": "Amazon Seller Central",
-    "HomeDepot": "Home Depot",
     "Home Depot": "Home Depot",
     "Wayfair": "Wayfair",
-    "Walmart - Seller Fulfilled": "Walmart",
     "Walmart": "Walmart",
     "eBay": "eBay",
 }

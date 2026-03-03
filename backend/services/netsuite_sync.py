@@ -11,8 +11,13 @@ CHANNEL_MAP = {
     "Amazon": "Amazon Seller Central",
     "Magento2TEST": "Other",
     "Magento2": "FI",
+    "HomeDepot": "Home Depot",
+    "Wayfair": "Wayfair",
     "Walmart": "Walmart",
+    "Ebay": "eBay",
     "eBay": "eBay",
+    "FBA": "FBA",
+    "- None -": "Other",
 }
 
 

@@ -107,4 +107,15 @@ def init_db():
     except Exception:
         pass  # Column already exists
 
+    # Migrate channel values to match updated CHANNEL_MAP
+    conn.executescript("""
+        UPDATE sales SET channel = 'Home Depot' WHERE channel = 'HomeDepot';
+        UPDATE sales SET channel = 'eBay' WHERE channel = 'Ebay';
+        UPDATE sales SET channel = 'Walmart' WHERE channel = 'Walmart - Seller Fulfilled';
+        UPDATE sales SET channel = 'Walmart' WHERE channel = 'Walmart  - WFS';
+        UPDATE sales SET channel = 'Other' WHERE channel = 'FBA';
+        UPDATE sales SET channel = 'Other' WHERE channel = '- None -';
+    """)
+    conn.commit()
+
     conn.close()

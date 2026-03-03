@@ -75,11 +75,12 @@ export function FilterBar({ params, onChange }: Props) {
         >
           <option value="">All Channels</option>
           <option value="FI">FI (Website)</option>
-          <option value="Amazon Vendor Central">Amazon Vendor Central</option>
           <option value="Amazon Seller Central">Amazon Seller Central</option>
-          <option value="HomeDepot">Home Depot</option>
+          <option value="Amazon Vendor Central">Amazon Vendor Central</option>
+          <option value="Home Depot">Home Depot</option>
           <option value="Wayfair">Wayfair</option>
           <option value="Walmart">Walmart</option>
+          <option value="eBay">eBay</option>
           <option value="Other">Other</option>
         </select>
       </div>
