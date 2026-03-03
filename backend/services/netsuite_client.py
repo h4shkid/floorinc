@@ -1,4 +1,6 @@
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 from typing import Callable
 
 from requests_oauthlib import OAuth1Session
@@ -55,27 +57,48 @@ def execute_suiteql(query: str, limit: int = 1000, offset: int = 0, session: OAu
 def execute_suiteql_paginated(
     query: str,
     progress_callback: Callable[[int, int], None] | None = None,
+    max_workers: int = 5,
 ) -> list[dict]:
-    all_items: list[dict] = []
-    offset = 0
     limit = 1000
-    total = None
-    session = _get_session()
 
-    while True:
+    # First request to get totalResults
+    first = execute_suiteql(query, limit=limit, offset=0)
+    total = first.get("totalResults", len(first.get("items", [])))
+    first_items = first.get("items", [])
+
+    if progress_callback and total:
+        progress_callback(len(first_items), total)
+
+    if not first.get("hasMore", False):
+        return first_items
+
+    # Calculate all remaining offsets
+    offsets = list(range(limit, total, limit))
+
+    # Fetch remaining pages in parallel
+    # Each thread gets its own OAuth session (they're not thread-safe)
+    results: dict[int, list[dict]] = {0: first_items}
+    fetched_count = len(first_items)
+    lock = Lock()
+
+    def fetch_page(offset: int) -> tuple[int, list[dict]]:
+        session = _get_session()
         data = execute_suiteql(query, limit=limit, offset=offset, session=session)
-        items = data.get("items", [])
-        all_items.extend(items)
+        return offset, data.get("items", [])
 
-        if total is None:
-            total = data.get("totalResults", len(items))
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(fetch_page, o): o for o in offsets}
+        for future in as_completed(futures):
+            offset, items = future.result()
+            with lock:
+                results[offset] = items
+                fetched_count += len(items)
+                if progress_callback and total:
+                    progress_callback(fetched_count, total)
 
-        if progress_callback and total:
-            progress_callback(len(all_items), total)
-
-        if not data.get("hasMore", False):
-            break
-
-        offset += limit
+    # Reassemble in order
+    all_items: list[dict] = []
+    for offset in sorted(results.keys()):
+        all_items.extend(results[offset])
 
     return all_items
