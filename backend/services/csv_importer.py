@@ -116,6 +116,44 @@ def import_sales(csv_path: str | None = None) -> dict:
     return {"rows_imported": len(rows), "rows_skipped": 0, "message": f"Imported {len(rows)} sales records"}
 
 
+def import_drop_ship(csv_path: str) -> dict:
+    """Import drop ship flags from 'Items for Mert' CSV — updates is_drop_ship on existing inventory rows."""
+    df = pd.read_csv(csv_path, encoding="latin-1")
+
+    if "Item Name" not in df.columns or "Custom Drop Ship Item" not in df.columns:
+        return {"rows_imported": 0, "rows_skipped": 0, "message": "CSV missing required columns: 'Item Name' and 'Custom Drop Ship Item'"}
+
+    df = df[["Item Name", "Custom Drop Ship Item"]].copy()
+    df = df.rename(columns={"Item Name": "sku"})
+    df["is_drop_ship"] = df["Custom Drop Ship Item"].map({"Yes": 1, "No": 0}).fillna(0).astype(int)
+    df = df.drop_duplicates(subset="sku", keep="first")
+
+    conn = get_connection()
+    # Reset all drop ship flags first
+    conn.execute("UPDATE inventory SET is_drop_ship = 0")
+
+    updated = 0
+    drop_ship_count = 0
+    for _, row in df.iterrows():
+        result = conn.execute(
+            "UPDATE inventory SET is_drop_ship = ? WHERE sku = ?",
+            (int(row["is_drop_ship"]), row["sku"]),
+        )
+        if result.rowcount > 0:
+            updated += 1
+            if row["is_drop_ship"] == 1:
+                drop_ship_count += 1
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "rows_imported": updated,
+        "rows_skipped": len(df) - updated,
+        "message": f"Updated {updated} SKUs ({drop_ship_count} marked as drop ship, {updated - drop_ship_count} as non-drop-ship)",
+    }
+
+
 def import_warehoused(csv_path: str) -> dict:
     """Import TN warehouse SKU list — marks matching inventory rows as is_warehoused=1."""
     df = pd.read_csv(csv_path, encoding="latin-1")
