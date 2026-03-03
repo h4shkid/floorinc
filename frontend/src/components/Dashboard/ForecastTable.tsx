@@ -11,6 +11,7 @@ interface Props {
   onRowClick?: (sku: string) => void;
   onLeadTimeChanged?: () => void;
   totals?: DashboardTotals;
+  velocityWindow?: number;
 }
 
 const CHANNEL_SHORT: Record<string, string> = {
@@ -31,20 +32,22 @@ function shortChannel(ch: string | null): string {
   return CHANNEL_SHORT[ch] ?? ch.slice(0, 4);
 }
 
-const COLUMNS = [
-  { key: "urgency", label: "", tooltip: "", align: "left" },
-  { key: "display_name", label: "Product", tooltip: "Product name and SKU", align: "left" },
-  { key: "manufacturer", label: "Manufacturer", tooltip: "Manufacturer — Preferred vendor/manufacturer for this product", align: "left" },
-  { key: "top_channel", label: "Ch", tooltip: "Channel — Top sales channel for this SKU (FI = FlooringInc website, AVC = Amazon Vendor Central, ASC = Amazon Seller Central, HD = Home Depot, WF = Wayfair, WM = Walmart)", align: "center" },
-  { key: "on_hand", label: "On Hand", tooltip: "On Hand — Current inventory units in Tennessee warehouse. Negative = backorder (orders received but no stock to fulfill)", align: "right" },
-  { key: "velocity", label: "Vel/d", tooltip: "Velocity per Day — Average units sold per day over the selected velocity window (default 90 days)", align: "right" },
-  { key: "seasonality_factor", label: "Szn", tooltip: "Seasonality Factor — Year-over-year demand multiplier. >1.0x = demand increasing vs last year, <1.0x = demand decreasing", align: "right" },
-  { key: "adjusted_velocity", label: "Adj Vel", tooltip: "Adjusted Velocity — Velocity x Seasonality factor. This is the forecasted daily demand used for calculations", align: "right" },
-  { key: "days_remaining", label: "Days Left", tooltip: "Days of Stock Remaining — On Hand / Adjusted Velocity. How many days until stockout at current sell rate", align: "right" },
-  { key: "lead_time_days", label: "LT", tooltip: "Lead Time (days) — How many days it takes to receive new stock from the supplier after ordering", align: "right" },
-  { key: "total_sold_90d", label: "Sold 90d", tooltip: "Total units sold in the last 90 days", align: "right" },
-  { key: "total_revenue_90d", label: "Rev 90d", tooltip: "Total revenue ($) in the last 90 days", align: "right" },
-] as const;
+function getColumns(window: number) {
+  return [
+    { key: "urgency", label: "", tooltip: "", align: "left" },
+    { key: "display_name", label: "Product", tooltip: "Product name and SKU", align: "left" },
+    { key: "manufacturer", label: "Manufacturer", tooltip: "Manufacturer — Preferred vendor/manufacturer for this product", align: "left" },
+    { key: "top_channel", label: "Ch", tooltip: "Channel — Top sales channel for this SKU (FI = FlooringInc website, AVC = Amazon Vendor Central, ASC = Amazon Seller Central, HD = Home Depot, WF = Wayfair, WM = Walmart)", align: "center" },
+    { key: "on_hand", label: "On Hand", tooltip: "On Hand — Current inventory units in Tennessee warehouse. Negative = backorder (orders received but no stock to fulfill)", align: "right" },
+    { key: "velocity", label: "Vel/d", tooltip: `Velocity per Day — Average units sold per day over the last ${window} days`, align: "right" },
+    { key: "seasonality_factor", label: "Szn", tooltip: "Seasonality Factor — Year-over-year demand multiplier. >1.0x = demand increasing vs last year, <1.0x = demand decreasing", align: "right" },
+    { key: "adjusted_velocity", label: "Adj Vel", tooltip: "Adjusted Velocity — Velocity x Seasonality factor. This is the forecasted daily demand used for calculations", align: "right" },
+    { key: "days_remaining", label: "Days Left", tooltip: "Days of Stock Remaining — On Hand / Adjusted Velocity. How many days until stockout at current sell rate", align: "right" },
+    { key: "lead_time_days", label: "LT", tooltip: "Lead Time (days) — How many days it takes to receive new stock from the supplier after ordering", align: "right" },
+    { key: "total_sold_90d", label: `Sold ${window}d`, tooltip: `Total units sold in the last ${window} days`, align: "right" },
+    { key: "total_revenue_90d", label: `Rev ${window}d`, tooltip: `Total revenue ($) in the last ${window} days`, align: "right" },
+  ] as const;
+}
 
 function LeadTimeCell({ sku, value, onSaved }: { sku: string; value: number; onSaved: () => void }) {
   const [editing, setEditing] = useState(false);
@@ -110,7 +113,8 @@ function LeadTimeCell({ sku, value, onSaved }: { sku: string; value: number; onS
   );
 }
 
-export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLeadTimeChanged, totals }: Props) {
+export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLeadTimeChanged, totals, velocityWindow = 90 }: Props) {
+  const COLUMNS = getColumns(velocityWindow);
   const arrow = (col: string) => {
     if (sortBy !== col) return "";
     return sortDir === "asc" ? " \u2191" : " \u2193";

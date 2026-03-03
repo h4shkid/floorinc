@@ -217,6 +217,7 @@ function AuthenticatedApp() {
                   onRowClick={setSelectedSku}
                   onLeadTimeChanged={reload}
                   totals={data.totals}
+                  velocityWindow={params.velocity_window}
                 />
                 <Pagination
                   page={data.page}
