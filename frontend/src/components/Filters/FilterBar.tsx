@@ -80,7 +80,6 @@ export function FilterBar({ params, onChange }: Props) {
           <option value="HomeDepot">Home Depot</option>
           <option value="Wayfair">Wayfair</option>
           <option value="Walmart">Walmart</option>
-          <option value="eBay">eBay</option>
           <option value="Other">Other</option>
         </select>
       </div>
