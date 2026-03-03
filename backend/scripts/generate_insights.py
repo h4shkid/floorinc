@@ -28,7 +28,7 @@ def get_sku_detail_data(conn, sku: str) -> dict:
         SELECT strftime('%Y-%m', order_date) AS month,
                SUM(quantity) AS quantity,
                COALESCE(SUM(item_revenue), 0) AS revenue
-        FROM sales WHERE sku = ? AND order_date >= ?
+        FROM sales WHERE sku = ? AND order_date >= ? AND item_revenue > 0
         GROUP BY month ORDER BY month
         """,
         (sku, twelve_months_ago),
@@ -39,7 +39,7 @@ def get_sku_detail_data(conn, sku: str) -> dict:
         SELECT COALESCE(channel, 'Unknown') AS channel,
                SUM(quantity) AS quantity,
                COALESCE(SUM(item_revenue), 0) AS revenue
-        FROM sales WHERE sku = ? AND order_date >= ?
+        FROM sales WHERE sku = ? AND order_date >= ? AND item_revenue > 0
         GROUP BY channel ORDER BY quantity DESC
         """,
         (sku, twelve_months_ago),
@@ -49,7 +49,7 @@ def get_sku_detail_data(conn, sku: str) -> dict:
         """
         SELECT COALESCE(SUM(item_revenue), 0) AS revenue,
                COALESCE(SUM(product_cost * quantity), 0) AS cost
-        FROM sales WHERE sku = ? AND order_date >= ?
+        FROM sales WHERE sku = ? AND order_date >= ? AND item_revenue > 0
         """,
         (sku, ninety_days_ago),
     ).fetchone()

@@ -16,6 +16,7 @@ def calculate_seasonality(window_days: int = 90) -> pd.DataFrame:
         SELECT sku, SUM(quantity) as prior_qty
         FROM sales
         WHERE order_date BETWEEN date('now', '-1 year', ?) AND date('now', '-1 year')
+          AND item_revenue > 0
         GROUP BY sku
     """
 
@@ -24,6 +25,7 @@ def calculate_seasonality(window_days: int = 90) -> pd.DataFrame:
         SELECT sku, SUM(quantity) as next_qty
         FROM sales
         WHERE order_date BETWEEN date('now', '-1 year') AND date('now', '-1 year', ?)
+          AND item_revenue > 0
         GROUP BY sku
     """
 

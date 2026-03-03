@@ -175,6 +175,15 @@ def sync_sales(progress_callback=None):
             sku = r.get("sku", "")
             if not sku:
                 continue
+            # Skip deprecated/retired SKUs
+            if (
+                sku.endswith("OLD")
+                or "_old" in sku
+                or "_delete" in sku.lower()
+                or "Delete" in (r.get("product_name") or "")
+            ):
+                continue
+            raw_ch = r.get("channel") or ""
             all_records.append({
                 "order_date": r.get("order_date", ""),
                 "sku": sku,
@@ -184,6 +193,7 @@ def sync_sales(progress_callback=None):
                 "item_revenue": float(r.get("item_revenue") or 0),
                 "product_cost": 0.0,
                 "product_name": r.get("product_name") or "",
+                "raw_channel": raw_ch,
             })
 
     conn = get_connection()
@@ -192,8 +202,8 @@ def sync_sales(progress_callback=None):
     else:
         conn.execute("DELETE FROM sales")
     conn.executemany(
-        """INSERT INTO sales (order_date, sku, quantity, channel, product_category, item_revenue, product_cost, product_name)
-           VALUES (:order_date, :sku, :quantity, :channel, :product_category, :item_revenue, :product_cost, :product_name)""",
+        """INSERT INTO sales (order_date, sku, quantity, channel, product_category, item_revenue, product_cost, product_name, raw_channel)
+           VALUES (:order_date, :sku, :quantity, :channel, :product_category, :item_revenue, :product_cost, :product_name, :raw_channel)""",
         all_records,
     )
     conn.commit()

@@ -11,6 +11,7 @@ def calculate_velocities(window_days: int = 90) -> pd.DataFrame:
                COALESCE(SUM(item_revenue), 0) as total_revenue
         FROM sales
         WHERE order_date >= date('now', ?)
+          AND item_revenue > 0
         GROUP BY sku
     """
     df = pd.read_sql_query(query, conn, params=[f"-{window_days} days"])
@@ -28,6 +29,7 @@ def get_top_channels() -> pd.DataFrame:
         SELECT sku, channel, SUM(quantity) as qty
         FROM sales
         WHERE order_date >= date('now', '-90 days')
+          AND item_revenue > 0
           AND channel IS NOT NULL
         GROUP BY sku, channel
     """
@@ -49,6 +51,7 @@ def get_product_categories() -> pd.DataFrame:
         SELECT sku, product_category, COUNT(*) as cnt
         FROM sales
         WHERE product_category IS NOT NULL
+          AND item_revenue > 0
         GROUP BY sku, product_category
     """
     df = pd.read_sql_query(query, conn)

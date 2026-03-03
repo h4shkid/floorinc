@@ -30,19 +30,19 @@ router = APIRouter(prefix="/api/forecast", tags=["forecast"])
 def get_data_stats():
     conn = get_connection()
     inv_count = conn.execute("SELECT COUNT(*) FROM inventory WHERE is_sample = 0").fetchone()[0]
-    sales_count = conn.execute("SELECT COUNT(*) FROM sales").fetchone()[0]
+    sales_count = conn.execute("SELECT COUNT(*) FROM sales WHERE item_revenue > 0").fetchone()[0]
     sku_with_sales = conn.execute(
-        "SELECT COUNT(DISTINCT sku) FROM sales"
+        "SELECT COUNT(DISTINCT sku) FROM sales WHERE item_revenue > 0"
     ).fetchone()[0]
 
     date_row = conn.execute(
-        "SELECT MIN(order_date) as min_date, MAX(order_date) as max_date FROM sales"
+        "SELECT MIN(order_date) as min_date, MAX(order_date) as max_date FROM sales WHERE item_revenue > 0"
     ).fetchone()
     min_date = date_row["min_date"]
     max_date = date_row["max_date"]
 
     channel_count = conn.execute(
-        "SELECT COUNT(DISTINCT channel) FROM sales WHERE channel IS NOT NULL"
+        "SELECT COUNT(DISTINCT channel) FROM sales WHERE channel IS NOT NULL AND item_revenue > 0"
     ).fetchone()[0]
 
     conn.close()
@@ -204,7 +204,7 @@ def get_sku_detail(sku: str):
                SUM(quantity) AS quantity,
                COALESCE(SUM(item_revenue), 0) AS revenue
         FROM sales
-        WHERE sku = ? AND order_date >= ?
+        WHERE sku = ? AND order_date >= ? AND item_revenue > 0
         GROUP BY month
         ORDER BY month
         """,
@@ -222,7 +222,7 @@ def get_sku_detail(sku: str):
                SUM(quantity) AS quantity,
                COALESCE(SUM(item_revenue), 0) AS revenue
         FROM sales
-        WHERE sku = ? AND order_date >= ?
+        WHERE sku = ? AND order_date >= ? AND item_revenue > 0
         GROUP BY channel
         ORDER BY quantity DESC
         """,
@@ -241,7 +241,7 @@ def get_sku_detail(sku: str):
                channel,
                COALESCE(item_revenue, 0) AS revenue
         FROM sales
-        WHERE sku = ?
+        WHERE sku = ? AND item_revenue > 0
         ORDER BY order_date DESC
         LIMIT 20
         """,
@@ -259,7 +259,7 @@ def get_sku_detail(sku: str):
         SELECT COALESCE(SUM(item_revenue), 0) AS revenue,
                COALESCE(SUM(product_cost * quantity), 0) AS cost
         FROM sales
-        WHERE sku = ? AND order_date >= ?
+        WHERE sku = ? AND order_date >= ? AND item_revenue > 0
         """,
         (sku, ninety_days_ago),
     ).fetchone()

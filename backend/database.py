@@ -68,12 +68,14 @@ def init_db():
             product_category TEXT,
             item_revenue REAL,
             product_cost REAL,
-            product_name TEXT
+            product_name TEXT,
+            raw_channel TEXT
         );
 
         CREATE INDEX IF NOT EXISTS idx_sales_sku ON sales(sku);
         CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(order_date);
         CREATE INDEX IF NOT EXISTS idx_sales_sku_date ON sales(sku, order_date);
+        CREATE INDEX IF NOT EXISTS idx_sales_revenue ON sales(order_date, item_revenue);
 
         CREATE TABLE IF NOT EXISTS lead_times (
             sku TEXT PRIMARY KEY,
@@ -95,6 +97,12 @@ def init_db():
     # Migrations — add columns to existing tables
     try:
         conn.execute("ALTER TABLE inventory ADD COLUMN manufacturer TEXT DEFAULT ''")
+        conn.commit()
+    except Exception:
+        pass  # Column already exists
+
+    try:
+        conn.execute("ALTER TABLE sales ADD COLUMN raw_channel TEXT")
         conn.commit()
     except Exception:
         pass  # Column already exists
