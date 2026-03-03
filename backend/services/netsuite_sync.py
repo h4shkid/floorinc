@@ -26,7 +26,7 @@ def _map_channel(raw: str | None) -> str:
 def sync_inventory(progress_callback=None):
     """Pull inventory from NetSuite: stock quantities + vendor names."""
 
-    # Query 1: stock quantities summed across all locations
+    # Query 1: stock quantities from TN DC warehouse (location ID 3)
     qty_query = """
         SELECT
             item.itemId AS sku,
@@ -35,6 +35,7 @@ def sync_inventory(progress_callback=None):
         FROM inventoryItem item
         JOIN inventoryItemLocations loc ON loc.item = item.id
         WHERE item.isInactive = 'F'
+          AND loc.location = 3
         GROUP BY item.itemId, item.displayName
     """
 
