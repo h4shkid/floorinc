@@ -1,6 +1,4 @@
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from threading import Lock
 from typing import Callable
 
 from requests_oauthlib import OAuth1Session
@@ -57,57 +55,26 @@ def execute_suiteql(query: str, limit: int = 1000, offset: int = 0, session: OAu
 def execute_suiteql_paginated(
     query: str,
     progress_callback: Callable[[int, int], None] | None = None,
-    max_workers: int = 5,
 ) -> list[dict]:
-    """Paginate a SuiteQL query with parallel fetching.
-    Follows hasMore instead of trusting totalResults (NetSuite caps it at 5000).
-    Stays within NetSuite's 100K offset limit — caller must chunk large queries."""
+    """Paginate a SuiteQL query sequentially using hasMore flag.
+    Reuses a single OAuth session for speed. Caller should chunk
+    large queries (>100K rows) to avoid NetSuite's offset limit."""
+    all_items: list[dict] = []
+    offset = 0
     limit = 1000
-    max_offset = 99000
+    session = _get_session()
 
-    # First request — sequential to discover hasMore
-    first = execute_suiteql(query, limit=limit, offset=0)
-    first_items = first.get("items", [])
-
-    if not first.get("hasMore", False):
-        return first_items
-
-    # Compute offsets up to the 100K cap
-    offsets = list(range(limit, max_offset + limit, limit))
-
-    results: dict[int, list[dict]] = {0: first_items}
-    fetched_count = len(first_items)
-    done = False
-    lock = Lock()
-
-    def fetch_page(offset: int) -> tuple[int, list[dict], bool]:
-        session = _get_session()
+    while True:
         data = execute_suiteql(query, limit=limit, offset=offset, session=session)
         items = data.get("items", [])
-        has_more = data.get("hasMore", False)
-        return offset, items, has_more
+        all_items.extend(items)
 
-    # Fetch in batches to allow early stop when hasMore=False
-    batch_size = max_workers * 4
-    for batch_start in range(0, len(offsets), batch_size):
-        if done:
+        if progress_callback:
+            progress_callback(len(all_items), len(all_items))
+
+        if not data.get("hasMore", False):
             break
-        batch = offsets[batch_start:batch_start + batch_size]
-        with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            futures = {pool.submit(fetch_page, o): o for o in batch}
-            for future in as_completed(futures):
-                offset, items, has_more = future.result()
-                with lock:
-                    results[offset] = items
-                    fetched_count += len(items)
-                    if progress_callback:
-                        progress_callback(fetched_count, fetched_count if has_more else fetched_count)
-                    if not has_more and offset == max(o for o in results.keys()):
-                        done = True
 
-    # Reassemble in order
-    all_items: list[dict] = []
-    for offset in sorted(results.keys()):
-        all_items.extend(results[offset])
+        offset += limit
 
     return all_items
