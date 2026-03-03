@@ -46,10 +46,10 @@ def import_inventory(csv_path: str | None = None) -> dict:
     df = df.drop_duplicates(subset="sku", keep="first")
 
     conn = get_connection()
-    # Preserve is_warehoused flags before wiping inventory
+    # Preserve is_warehoused and source_type flags before wiping inventory
     existing_flags = {}
-    for row in conn.execute("SELECT sku, is_warehoused FROM inventory WHERE is_warehoused = 1").fetchall():
-        existing_flags[row["sku"]] = row["is_warehoused"]
+    for row in conn.execute("SELECT sku, is_warehoused, source_type FROM inventory WHERE is_warehoused = 1 OR source_type != ''").fetchall():
+        existing_flags[row["sku"]] = (row["is_warehoused"], row["source_type"] or "")
 
     conn.execute("DELETE FROM inventory")
     rows = df.to_dict("records")
@@ -58,11 +58,11 @@ def import_inventory(csv_path: str | None = None) -> dict:
         rows,
     )
 
-    # Restore is_warehoused flags
+    # Restore is_warehoused and source_type flags
     if existing_flags:
         conn.executemany(
-            "UPDATE inventory SET is_warehoused = 1 WHERE sku = ?",
-            [(sku,) for sku in existing_flags],
+            "UPDATE inventory SET is_warehoused = ?, source_type = ? WHERE sku = ?",
+            [(wh, st, sku) for sku, (wh, st) in existing_flags.items()],
         )
     conn.commit()
     conn.close()
@@ -155,27 +155,48 @@ def import_drop_ship(csv_path: str) -> dict:
 
 
 def import_warehoused(csv_path: str) -> dict:
-    """Import TN warehouse SKU list — marks matching inventory rows as is_warehoused=1."""
+    """Import TN warehouse SKU list — marks matching inventory rows as is_warehoused=1 and sets source_type."""
     df = pd.read_csv(csv_path, encoding="latin-1")
 
     # SKU is column index 1 (unnamed in TN Items CSV)
     sku_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
-    skus = df[sku_col].dropna().astype(str).str.strip().tolist()
+
+    # Check for International or Domestic column
+    has_source = "International or Domestic" in df.columns
 
     conn = get_connection()
-    # Reset all warehoused flags first
-    conn.execute("UPDATE inventory SET is_warehoused = 0")
+    # Reset all warehoused flags and source_type first
+    conn.execute("UPDATE inventory SET is_warehoused = 0, source_type = ''")
 
     updated = 0
-    for sku in skus:
-        result = conn.execute("UPDATE inventory SET is_warehoused = 1 WHERE sku = ?", (sku,))
-        updated += result.rowcount
+    domestic = 0
+    international = 0
+    for _, row in df.iterrows():
+        sku = str(row[sku_col]).strip() if pd.notna(row[sku_col]) else ""
+        if not sku:
+            continue
+        source = str(row["International or Domestic"]).strip() if has_source and pd.notna(row.get("International or Domestic")) else ""
+        result = conn.execute(
+            "UPDATE inventory SET is_warehoused = 1, source_type = ? WHERE sku = ?",
+            (source, sku),
+        )
+        if result.rowcount > 0:
+            updated += 1
+            if source == "Domestic":
+                domestic += 1
+            elif source == "International":
+                international += 1
 
     conn.commit()
     conn.close()
 
+    total_skus = len(df[sku_col].dropna())
+    msg = f"Marked {updated} SKUs as warehoused ({total_skus - updated} not found in inventory)"
+    if has_source:
+        msg += f" — {domestic} domestic, {international} international"
+
     return {
         "rows_imported": updated,
-        "rows_skipped": len(skus) - updated,
-        "message": f"Marked {updated} SKUs as warehoused ({len(skus) - updated} SKUs not found in inventory)",
+        "rows_skipped": total_skus - updated,
+        "message": msg,
     }

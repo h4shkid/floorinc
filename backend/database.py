@@ -119,6 +119,7 @@ def init_db():
         "ALTER TABLE sales ADD COLUMN raw_channel TEXT",
         "ALTER TABLE inventory ADD COLUMN is_drop_ship INTEGER DEFAULT 0",
         "ALTER TABLE inventory ADD COLUMN is_warehoused INTEGER DEFAULT 0",
+        "ALTER TABLE inventory ADD COLUMN source_type TEXT DEFAULT ''",
     ]
     for sql in migrations:
         try:

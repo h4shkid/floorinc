@@ -69,7 +69,7 @@ export interface DashboardParams {
   manufacturer: string;
   velocity_window: number;
   active_only: boolean;
-  stock_filter: "warehoused" | "drop_ship" | "all";
+  stock_filter: "warehoused" | "warehoused_domestic" | "warehoused_international" | "drop_ship" | "all";
 }
 
 export interface LeadTime {

@@ -115,12 +115,12 @@ def sync_inventory(progress_callback=None):
 
     conn = get_connection()
 
-    # Preserve drop ship / warehoused flags before wiping
+    # Preserve drop ship / warehoused / source_type flags before wiping
     saved_flags = {}
     for row in conn.execute(
-        "SELECT sku, is_drop_ship, is_warehoused FROM inventory WHERE is_drop_ship = 1 OR is_warehoused = 1"
+        "SELECT sku, is_drop_ship, is_warehoused, source_type FROM inventory WHERE is_drop_ship = 1 OR is_warehoused = 1 OR source_type != ''"
     ).fetchall():
-        saved_flags[row["sku"]] = (row["is_drop_ship"], row["is_warehoused"])
+        saved_flags[row["sku"]] = (row["is_drop_ship"], row["is_warehoused"], row["source_type"] or "")
 
     conn.execute("DELETE FROM inventory")
     conn.executemany(
@@ -132,8 +132,8 @@ def sync_inventory(progress_callback=None):
     # Restore saved flags
     if saved_flags:
         conn.executemany(
-            "UPDATE inventory SET is_drop_ship = ?, is_warehoused = ? WHERE sku = ?",
-            [(ds, wh, sku) for sku, (ds, wh) in saved_flags.items()],
+            "UPDATE inventory SET is_drop_ship = ?, is_warehoused = ?, source_type = ? WHERE sku = ?",
+            [(ds, wh, st, sku) for sku, (ds, wh, st) in saved_flags.items()],
         )
 
     conn.commit()

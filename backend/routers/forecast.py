@@ -93,13 +93,17 @@ def get_dashboard(
     manufacturer: str = Query("", description="Manufacturer/vendor filter"),
     velocity_window: int = Query(90, ge=7, le=365),
     active_only: bool = Query(True, description="Only show SKUs with sales activity"),
-    stock_filter: str = Query("warehoused", description="warehoused|drop_ship|all"),
+    stock_filter: str = Query("warehoused", description="warehoused|warehoused_domestic|warehoused_international|drop_ship|all"),
 ):
     df = build_forecast(velocity_window, active_only=active_only)
 
     # Stock type filter
     if stock_filter == "warehoused":
         df = df[(df["is_warehoused"] == 1) | (df["is_drop_ship"] == 0)]
+    elif stock_filter == "warehoused_domestic":
+        df = df[((df["is_warehoused"] == 1) | (df["is_drop_ship"] == 0)) & (df["source_type"] == "Domestic")]
+    elif stock_filter == "warehoused_international":
+        df = df[((df["is_warehoused"] == 1) | (df["is_drop_ship"] == 0)) & (df["source_type"] == "International")]
     elif stock_filter == "drop_ship":
         df = df[(df["is_drop_ship"] == 1) & (df["is_warehoused"] == 0)]
     # "all" = no filter
