@@ -6,9 +6,11 @@ from services.sync_status import sync_status
 
 
 CHANNEL_MAP = {
-    "Magento2": "FI",
+    # More specific prefixes MUST come before shorter ones (startswith matching)
+    "AmazonVendorCentral": "Amazon Vendor Central",
     "Amazon": "Amazon Seller Central",
-    "AmazonVendorCentral-DirectFulfillment": "Amazon Vendor Central",
+    "Magento2TEST": "Other",
+    "Magento2": "FI",
     "Walmart": "Walmart",
     "eBay": "eBay",
 }
