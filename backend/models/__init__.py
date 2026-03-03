@@ -10,6 +10,7 @@ from .schemas import (
     ChannelBreakdown,
     RecentOrder,
     SKUDetailResponse,
+    PurchaseOrderLine,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "ChannelBreakdown",
     "RecentOrder",
     "SKUDetailResponse",
+    "PurchaseOrderLine",
 ]

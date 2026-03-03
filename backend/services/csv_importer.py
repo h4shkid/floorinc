@@ -17,6 +17,11 @@ def import_inventory(csv_path: str | None = None) -> dict:
             "Preferred Vendor": "manufacturer",
         })
         df["manufacturer"] = df["manufacturer"].fillna("")
+        # Extract drop ship flag
+        if "Custom Drop Ship Item" in df.columns:
+            df["is_drop_ship"] = df["Custom Drop Ship Item"].map({"Yes": 1, "No": 0}).fillna(0).astype(int)
+        else:
+            df["is_drop_ship"] = 0
     else:
         # Standard inventory format: Name, Display Name, On Hand
         df = df.rename(columns={
@@ -25,8 +30,9 @@ def import_inventory(csv_path: str | None = None) -> dict:
             "On Hand": "on_hand",
         })
         df["manufacturer"] = ""
+        df["is_drop_ship"] = 0
 
-    df = df[["sku", "display_name", "on_hand", "manufacturer"]].copy()
+    df = df[["sku", "display_name", "on_hand", "manufacturer", "is_drop_ship"]].copy()
     df["on_hand"] = pd.to_numeric(df["on_hand"], errors="coerce").fillna(0).astype(int)
     df["display_name"] = df["display_name"].fillna(df["sku"])
 
@@ -40,12 +46,24 @@ def import_inventory(csv_path: str | None = None) -> dict:
     df = df.drop_duplicates(subset="sku", keep="first")
 
     conn = get_connection()
+    # Preserve is_warehoused flags before wiping inventory
+    existing_flags = {}
+    for row in conn.execute("SELECT sku, is_warehoused FROM inventory WHERE is_warehoused = 1").fetchall():
+        existing_flags[row["sku"]] = row["is_warehoused"]
+
     conn.execute("DELETE FROM inventory")
     rows = df.to_dict("records")
     conn.executemany(
-        "INSERT INTO inventory (sku, display_name, on_hand, is_sample, manufacturer) VALUES (:sku, :display_name, :on_hand, :is_sample, :manufacturer)",
+        "INSERT INTO inventory (sku, display_name, on_hand, is_sample, manufacturer, is_drop_ship) VALUES (:sku, :display_name, :on_hand, :is_sample, :manufacturer, :is_drop_ship)",
         rows,
     )
+
+    # Restore is_warehoused flags
+    if existing_flags:
+        conn.executemany(
+            "UPDATE inventory SET is_warehoused = 1 WHERE sku = ?",
+            [(sku,) for sku in existing_flags],
+        )
     conn.commit()
     conn.close()
 
@@ -96,3 +114,30 @@ def import_sales(csv_path: str | None = None) -> dict:
     conn.close()
 
     return {"rows_imported": len(rows), "rows_skipped": 0, "message": f"Imported {len(rows)} sales records"}
+
+
+def import_warehoused(csv_path: str) -> dict:
+    """Import TN warehouse SKU list — marks matching inventory rows as is_warehoused=1."""
+    df = pd.read_csv(csv_path, encoding="latin-1")
+
+    # SKU is column index 1 (unnamed in TN Items CSV)
+    sku_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
+    skus = df[sku_col].dropna().astype(str).str.strip().tolist()
+
+    conn = get_connection()
+    # Reset all warehoused flags first
+    conn.execute("UPDATE inventory SET is_warehoused = 0")
+
+    updated = 0
+    for sku in skus:
+        result = conn.execute("UPDATE inventory SET is_warehoused = 1 WHERE sku = ?", (sku,))
+        updated += result.rowcount
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "rows_imported": updated,
+        "rows_skipped": len(skus) - updated,
+        "message": f"Marked {updated} SKUs as warehoused ({len(skus) - updated} SKUs not found in inventory)",
+    }

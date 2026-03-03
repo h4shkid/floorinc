@@ -17,6 +17,20 @@ export interface ForecastItem {
   item_cost: number;
   qty_on_order: number;
   qty_committed: number;
+  incoming_qty: number;
+}
+
+export interface PurchaseOrderLine {
+  po_number: string;
+  po_date: string | null;
+  status: string;
+  vendor: string | null;
+  ordered_qty: number;
+  received_qty: number;
+  remaining_qty: number;
+  expected_date: string | null;
+  rate: number;
+  amount: number;
 }
 
 export interface DashboardTotals {
@@ -55,6 +69,7 @@ export interface DashboardParams {
   manufacturer: string;
   velocity_window: number;
   active_only: boolean;
+  stock_filter: "warehoused" | "drop_ship" | "all";
 }
 
 export interface LeadTime {
@@ -126,9 +141,11 @@ export interface SKUDetail {
   item_cost: number;
   qty_on_order: number;
   qty_committed: number;
+  incoming_qty: number;
   monthly_sales: MonthlySales[];
   channel_breakdown: ChannelBreakdown[];
   recent_orders: RecentOrder[];
+  purchase_orders: PurchaseOrderLine[];
   total_revenue_90d: number;
   total_cost_90d: number;
   margin_90d: number | null;

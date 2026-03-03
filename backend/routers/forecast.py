@@ -10,6 +10,7 @@ from models import (
     ChannelBreakdown,
     RecentOrder,
     SKUDetailResponse,
+    PurchaseOrderLine,
 )
 from database import get_connection
 from services.forecast_engine import build_forecast
@@ -92,8 +93,16 @@ def get_dashboard(
     manufacturer: str = Query("", description="Manufacturer/vendor filter"),
     velocity_window: int = Query(90, ge=7, le=365),
     active_only: bool = Query(True, description="Only show SKUs with sales activity"),
+    stock_filter: str = Query("warehoused", description="warehoused|drop_ship|all"),
 ):
     df = build_forecast(velocity_window, active_only=active_only)
+
+    # Stock type filter
+    if stock_filter == "warehoused":
+        df = df[(df["is_warehoused"] == 1) | (df["is_drop_ship"] == 0)]
+    elif stock_filter == "drop_ship":
+        df = df[(df["is_drop_ship"] == 1) & (df["is_warehoused"] == 0)]
+    # "all" = no filter
 
     # Filters
     if search:
@@ -156,6 +165,7 @@ def get_dashboard(
             item_cost=_safe_float(r.get("item_cost", 0), 2) or 0.0,
             qty_on_order=int(r.get("qty_on_order", 0)),
             qty_committed=int(r.get("qty_committed", 0)),
+            incoming_qty=int(r.get("incoming_qty", 0)),
         )
         for _, r in page_df.iterrows()
     ]
@@ -267,6 +277,30 @@ def get_sku_detail(sku: str):
         (sku, ninety_days_ago),
     ).fetchone()
 
+    # Purchase orders
+    po_rows = conn.execute(
+        """SELECT po_number, po_date, status, vendor, ordered_qty, received_qty,
+                  remaining_qty, expected_date, rate, amount
+           FROM purchase_orders WHERE sku = ? ORDER BY expected_date""",
+        (sku,),
+    ).fetchall()
+    purchase_orders = [
+        PurchaseOrderLine(
+            po_number=p["po_number"],
+            po_date=p["po_date"],
+            status=p["status"],
+            vendor=p["vendor"],
+            ordered_qty=int(p["ordered_qty"]),
+            received_qty=int(p["received_qty"]),
+            remaining_qty=int(p["remaining_qty"]),
+            expected_date=p["expected_date"],
+            rate=float(p["rate"] or 0),
+            amount=float(p["amount"] or 0),
+        )
+        for p in po_rows
+    ]
+    incoming_qty = sum(p.remaining_qty for p in purchase_orders)
+
     # AI insight
     insight_row = conn.execute(
         "SELECT insight, generated_at FROM sku_insights WHERE sku = ?", (sku,)
@@ -297,9 +331,11 @@ def get_sku_detail(sku: str):
         item_cost=_safe_float(r.get("item_cost", 0), 2) or 0.0,
         qty_on_order=int(r.get("qty_on_order", 0)),
         qty_committed=int(r.get("qty_committed", 0)),
+        incoming_qty=incoming_qty,
         monthly_sales=monthly_sales,
         channel_breakdown=channel_breakdown,
         recent_orders=recent_orders,
+        purchase_orders=purchase_orders,
         total_revenue_90d=total_revenue,
         total_cost_90d=total_cost,
         margin_90d=margin,

@@ -114,12 +114,28 @@ def sync_inventory(progress_callback=None):
         })
 
     conn = get_connection()
+
+    # Preserve drop ship / warehoused flags before wiping
+    saved_flags = {}
+    for row in conn.execute(
+        "SELECT sku, is_drop_ship, is_warehoused FROM inventory WHERE is_drop_ship = 1 OR is_warehoused = 1"
+    ).fetchall():
+        saved_flags[row["sku"]] = (row["is_drop_ship"], row["is_warehoused"])
+
     conn.execute("DELETE FROM inventory")
     conn.executemany(
-        """INSERT INTO inventory (sku, display_name, on_hand, is_sample, manufacturer, item_cost, qty_on_order, qty_committed)
-           VALUES (:sku, :display_name, :on_hand, :is_sample, :manufacturer, :item_cost, :qty_on_order, :qty_committed)""",
+        """INSERT INTO inventory (sku, display_name, on_hand, is_sample, manufacturer, item_cost, qty_on_order, qty_committed, is_drop_ship, is_warehoused)
+           VALUES (:sku, :display_name, :on_hand, :is_sample, :manufacturer, :item_cost, :qty_on_order, :qty_committed, 0, 0)""",
         records,
     )
+
+    # Restore saved flags
+    if saved_flags:
+        conn.executemany(
+            "UPDATE inventory SET is_drop_ship = ?, is_warehoused = ? WHERE sku = ?",
+            [(ds, wh, sku) for sku, (ds, wh) in saved_flags.items()],
+        )
+
     conn.commit()
     conn.close()
 
@@ -230,6 +246,65 @@ def sync_sales(progress_callback=None):
     return len(all_records)
 
 
+def sync_purchase_orders(progress_callback=None):
+    """Pull open purchase order lines from NetSuite (statuses B, D, E)."""
+    query = """
+        SELECT t.tranId AS po_number, TO_CHAR(t.tranDate, 'YYYY-MM-DD') AS po_date,
+               t.status, v.companyName AS vendor, item.itemId AS sku,
+               tl.quantity AS ordered_qty,
+               COALESCE(tl.quantityShipRecv, 0) AS received_qty,
+               (tl.quantity - COALESCE(tl.quantityShipRecv, 0)) AS remaining_qty,
+               TO_CHAR(tl.expectedReceiptDate, 'YYYY-MM-DD') AS expected_date,
+               tl.rate, tl.amount
+        FROM transactionLine tl
+        JOIN transaction t ON t.id = tl.transaction
+        JOIN item ON item.id = tl.item
+        LEFT JOIN vendor v ON v.id = t.entity
+        WHERE t.type = 'PurchOrd'
+          AND t.status IN ('B', 'D', 'E')
+          AND tl.mainLine = 'F'
+          AND tl.quantity > 0
+    """
+
+    def po_progress(fetched, total):
+        pct = int((fetched / total) * 100)
+        if progress_callback:
+            progress_callback("purchase_orders", pct, f"Fetching purchase orders... {fetched:,}/{total:,}")
+
+    rows = execute_suiteql_paginated(query, progress_callback=po_progress)
+
+    records = []
+    for r in rows:
+        sku = r.get("sku", "")
+        if not sku:
+            continue
+        records.append({
+            "po_number": r.get("po_number") or "",
+            "po_date": r.get("po_date"),
+            "status": r.get("status") or "",
+            "vendor": r.get("vendor"),
+            "sku": sku,
+            "ordered_qty": int(float(r.get("ordered_qty") or 0)),
+            "received_qty": int(float(r.get("received_qty") or 0)),
+            "remaining_qty": int(float(r.get("remaining_qty") or 0)),
+            "expected_date": r.get("expected_date"),
+            "rate": float(r.get("rate") or 0),
+            "amount": float(r.get("amount") or 0),
+        })
+
+    conn = get_connection()
+    conn.execute("DELETE FROM purchase_orders")
+    conn.executemany(
+        """INSERT INTO purchase_orders (po_number, po_date, status, vendor, sku, ordered_qty, received_qty, remaining_qty, expected_date, rate, amount)
+           VALUES (:po_number, :po_date, :status, :vendor, :sku, :ordered_qty, :received_qty, :remaining_qty, :expected_date, :rate, :amount)""",
+        records,
+    )
+    conn.commit()
+    conn.close()
+
+    return len(records)
+
+
 def run_full_sync():
     """Run full inventory + sales sync with status tracking."""
     try:
@@ -241,14 +316,17 @@ def run_full_sync():
         sync_status.update("inventory", 0, "Syncing inventory from NetSuite...")
         inv_count = sync_inventory(progress_callback=progress)
 
-        sync_status.update("sales", 50, "Syncing sales from NetSuite...")
+        sync_status.update("sales", 40, "Syncing sales from NetSuite...")
         sales_count = sync_sales(progress_callback=progress)
+
+        sync_status.update("purchase_orders", 85, "Syncing purchase orders from NetSuite...")
+        po_count = sync_purchase_orders(progress_callback=progress)
 
         sync_status.update("cloud", 98, "Uploading to cloud storage...")
         sync_to_cloud()
 
         sync_status.complete(
-            f"Synced {inv_count:,} inventory items and {sales_count:,} new sales records"
+            f"Synced {inv_count:,} inventory items, {sales_count:,} new sales records, and {po_count:,} PO lines"
         )
     except Exception as e:
         sync_status.fail(str(e))

@@ -47,6 +47,20 @@ export function FilterBar({ params, onChange }: Props) {
         />
       </div>
 
+      {/* Stock Type */}
+      <div>
+        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Stock Type</label>
+        <select
+          value={params.stock_filter}
+          onChange={(e) => onChange({ stock_filter: e.target.value as "warehoused" | "drop_ship" | "all" })}
+          className={selectClass}
+        >
+          <option value="warehoused">Warehoused</option>
+          <option value="drop_ship">Drop Ship Only</option>
+          <option value="all">All Items</option>
+        </select>
+      </div>
+
       {/* Urgency */}
       <div>
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Urgency</label>

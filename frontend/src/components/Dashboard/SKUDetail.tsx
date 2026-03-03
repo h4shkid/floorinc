@@ -138,8 +138,8 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                   {data.on_hand.toLocaleString()}
                 </div>
                 <div className="text-[11px] text-slate-500 dark:text-slate-400">on hand</div>
-                {data.qty_on_order > 0 && (
-                  <div className="text-[11px] text-green-600 dark:text-green-400 mt-0.5">+{data.qty_on_order.toLocaleString()} on order</div>
+                {data.incoming_qty > 0 && (
+                  <div className="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5">+{data.incoming_qty.toLocaleString()} incoming</div>
                 )}
               </div>
               <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-center">
@@ -172,6 +172,45 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                   )}
                 </div>
                 <p className="text-sm text-indigo-900 dark:text-indigo-200 leading-relaxed">{data.ai_insight}</p>
+              </div>
+            )}
+
+            {/* Incoming Purchase Orders */}
+            {data.purchase_orders.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Incoming Purchase Orders</h4>
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                        <th className="px-3 py-1.5 text-left font-medium">PO#</th>
+                        <th className="px-3 py-1.5 text-left font-medium">Vendor</th>
+                        <th className="px-3 py-1.5 text-right font-medium">Remaining</th>
+                        <th className="px-3 py-1.5 text-left font-medium">Expected</th>
+                        <th className="px-3 py-1.5 text-center font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.purchase_orders.map((po, i) => (
+                        <tr key={i} className="border-b border-slate-100 dark:border-slate-700/50 last:border-b-0">
+                          <td className="px-3 py-1.5 text-slate-700 dark:text-slate-300 font-mono">{po.po_number}</td>
+                          <td className="px-3 py-1.5 text-slate-600 dark:text-slate-400 truncate max-w-[120px]" title={po.vendor || ""}>{po.vendor || "-"}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums text-blue-600 dark:text-blue-400 font-medium">{po.remaining_qty.toLocaleString()}</td>
+                          <td className="px-3 py-1.5 text-slate-600 dark:text-slate-400">{po.expected_date ? fmtDate(po.expected_date) : "-"}</td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                              po.status === "B" ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300" :
+                              po.status === "D" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" :
+                              "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+                            }`}>
+                              {po.status === "B" ? "Pending" : po.status === "D" ? "Partial" : po.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 

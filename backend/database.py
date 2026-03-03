@@ -91,6 +91,22 @@ def init_db():
             model TEXT NOT NULL DEFAULT 'qwen2.5:7b',
             generated_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS purchase_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            po_number TEXT NOT NULL,
+            po_date TEXT,
+            status TEXT,
+            vendor TEXT,
+            sku TEXT NOT NULL,
+            ordered_qty INTEGER NOT NULL DEFAULT 0,
+            received_qty INTEGER NOT NULL DEFAULT 0,
+            remaining_qty INTEGER NOT NULL DEFAULT 0,
+            expected_date TEXT,
+            rate REAL DEFAULT 0,
+            amount REAL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS idx_po_sku ON purchase_orders(sku);
     """)
     conn.commit()
 
@@ -101,6 +117,8 @@ def init_db():
         "ALTER TABLE inventory ADD COLUMN qty_on_order INTEGER DEFAULT 0",
         "ALTER TABLE inventory ADD COLUMN qty_committed INTEGER DEFAULT 0",
         "ALTER TABLE sales ADD COLUMN raw_channel TEXT",
+        "ALTER TABLE inventory ADD COLUMN is_drop_ship INTEGER DEFAULT 0",
+        "ALTER TABLE inventory ADD COLUMN is_warehoused INTEGER DEFAULT 0",
     ]
     for sql in migrations:
         try:

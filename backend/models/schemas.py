@@ -1,6 +1,19 @@
 from pydantic import BaseModel
 
 
+class PurchaseOrderLine(BaseModel):
+    po_number: str
+    po_date: str | None
+    status: str
+    vendor: str | None
+    ordered_qty: int
+    received_qty: int
+    remaining_qty: int
+    expected_date: str | None
+    rate: float = 0
+    amount: float = 0
+
+
 class ForecastItem(BaseModel):
     sku: str
     display_name: str
@@ -20,6 +33,7 @@ class ForecastItem(BaseModel):
     item_cost: float = 0.0
     qty_on_order: int = 0
     qty_committed: int = 0
+    incoming_qty: int = 0
 
 
 class ForecastSummary(BaseModel):
@@ -99,9 +113,11 @@ class SKUDetailResponse(BaseModel):
     item_cost: float = 0.0
     qty_on_order: int = 0
     qty_committed: int = 0
+    incoming_qty: int = 0
     monthly_sales: list[MonthlySales]
     channel_breakdown: list[ChannelBreakdown]
     recent_orders: list[RecentOrder]
+    purchase_orders: list[PurchaseOrderLine] = []
     total_revenue_90d: float
     total_cost_90d: float
     margin_90d: float | None

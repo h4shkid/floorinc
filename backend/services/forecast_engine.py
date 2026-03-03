@@ -19,12 +19,18 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
 
     # 1. Inventory (non-sample)
     inv_df = pd.read_sql_query(
-        "SELECT sku, display_name, on_hand, manufacturer, item_cost, qty_on_order, qty_committed FROM inventory WHERE is_sample = 0",
+        "SELECT sku, display_name, on_hand, manufacturer, item_cost, qty_on_order, qty_committed, is_drop_ship, is_warehoused FROM inventory WHERE is_sample = 0",
         conn,
     )
 
     # Lead times
     lt_df = pd.read_sql_query("SELECT sku, lead_time_days FROM lead_times", conn)
+
+    # Incoming PO quantities
+    po_df = pd.read_sql_query(
+        "SELECT sku, SUM(remaining_qty) AS incoming_qty FROM purchase_orders GROUP BY sku",
+        conn,
+    )
     conn.close()
 
     # 2. Velocity
@@ -43,6 +49,7 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
     df = df.merge(lt_df, on="sku", how="left")
     df = df.merge(chan_df, on="sku", how="left")
     df = df.merge(cat_df, on="sku", how="left")
+    df = df.merge(po_df, on="sku", how="left")
 
     # Filter to only SKUs with sales history (active products)
     if active_only:
@@ -62,6 +69,9 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
     df["item_cost"] = df["item_cost"].fillna(0.0)
     df["qty_on_order"] = df["qty_on_order"].fillna(0).astype(int)
     df["qty_committed"] = df["qty_committed"].fillna(0).astype(int)
+    df["incoming_qty"] = df["incoming_qty"].fillna(0).astype(int)
+    df["is_drop_ship"] = df["is_drop_ship"].fillna(0).astype(int)
+    df["is_warehoused"] = df["is_warehoused"].fillna(0).astype(int)
 
     # 5. Adjusted velocity & days remaining
     df["adjusted_velocity"] = df["velocity"] * df["seasonality_factor"]

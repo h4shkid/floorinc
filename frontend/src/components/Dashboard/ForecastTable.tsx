@@ -191,6 +191,9 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
               {/* On Hand */}
               <td className={`px-2 py-1.5 text-right tabular-nums ${item.on_hand < 0 ? "text-red-600 dark:text-red-400 font-bold" : "text-slate-700 dark:text-slate-300"}`}>
                 {item.on_hand.toLocaleString()}
+                {item.incoming_qty > 0 && (
+                  <div className="text-[10px] text-blue-600 dark:text-blue-400 font-normal">+{item.incoming_qty.toLocaleString()} incoming</div>
+                )}
               </td>
 
               {/* Velocity */}

@@ -14,6 +14,7 @@ const DEFAULT_PARAMS: DashboardParams = {
   manufacturer: "",
   velocity_window: 90,
   active_only: true,
+  stock_filter: "warehoused",
 };
 
 export function useForecast() {
