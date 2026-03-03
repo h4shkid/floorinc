@@ -136,7 +136,7 @@ def _fetch_sales_chunk(chunk_start: str, chunk_end: str) -> list[dict]:
         JOIN transaction t ON t.id = tl.transaction
         JOIN item ON item.id = tl.item
         WHERE tl.mainLine = 'F'
-          AND tl.itemType = 'InvtPart'
+          AND tl.itemType IN ('InvtPart', 'Kit')
           AND t.tranDate >= TO_DATE('{chunk_start}', 'YYYY-MM-DD')
           AND t.tranDate <= TO_DATE('{chunk_end}', 'YYYY-MM-DD')
           AND tl.quantity < 0
