@@ -247,7 +247,7 @@ def sync_sales(progress_callback=None):
 
 
 def sync_purchase_orders(progress_callback=None):
-    """Pull open purchase order lines from NetSuite (statuses B, D, E)."""
+    """Pull open purchase order lines from NetSuite with remaining qty > 0."""
     query = """
         SELECT t.tranId AS po_number, TO_CHAR(t.tranDate, 'YYYY-MM-DD') AS po_date,
                t.status, v.companyName AS vendor, item.itemId AS sku,
@@ -264,6 +264,7 @@ def sync_purchase_orders(progress_callback=None):
           AND t.status IN ('B', 'D', 'E')
           AND tl.mainLine = 'F'
           AND tl.quantity > 0
+          AND (tl.quantity - COALESCE(tl.quantityShipRecv, 0)) > 0
     """
 
     def po_progress(fetched, total):
