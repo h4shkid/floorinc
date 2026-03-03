@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from database import get_connection, sync_to_turso
+from database import get_connection, sync_to_cloud
 from models import LeadTimeUpdate, LeadTimeResponse
 
 router = APIRouter(prefix="/api/lead-times", tags=["lead_times"])
@@ -64,7 +64,7 @@ def update_lead_time(sku: str, body: LeadTimeUpdate):
         (sku, category, body.lead_time_days, body.source),
     )
     conn.commit()
-    sync_to_turso()
+    sync_to_cloud()
 
     row = conn.execute("SELECT * FROM lead_times WHERE sku = ?", (sku,)).fetchone()
     conn.close()

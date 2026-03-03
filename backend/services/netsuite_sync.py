@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-from database import get_connection, sync_to_turso
+from database import get_connection, sync_to_cloud
 from services.netsuite_client import execute_suiteql_paginated
 from services.sync_status import sync_status
 
@@ -216,8 +216,8 @@ def run_full_sync():
         sync_status.update("sales", 50, "Syncing sales from NetSuite...")
         sales_count = sync_sales(progress_callback=progress)
 
-        sync_status.update("turso", 98, "Syncing to cloud database...")
-        sync_to_turso()
+        sync_status.update("cloud", 98, "Uploading to cloud storage...")
+        sync_to_cloud()
 
         sync_status.complete(
             f"Synced {inv_count:,} inventory items and {sales_count:,} new sales records"
@@ -238,8 +238,8 @@ def run_sales_sync():
         sync_status.update("sales", 0, "Syncing sales from NetSuite...")
         sales_count = sync_sales(progress_callback=lambda phase, pct, msg: progress(phase, int(pct / 98 * 100), msg))
 
-        sync_status.update("turso", 98, "Syncing to cloud database...")
-        sync_to_turso()
+        sync_status.update("cloud", 98, "Uploading to cloud storage...")
+        sync_to_cloud()
 
         sync_status.complete(f"Synced {sales_count:,} new sales records")
     except Exception as e:

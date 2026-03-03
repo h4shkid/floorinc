@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from database import init_db, sync_from_turso
+from database import init_db, sync_from_cloud
 from routers import forecast, lead_times, import_data, netsuite
 
 CORS_ORIGINS = os.environ.get(
@@ -39,7 +39,7 @@ app.include_router(netsuite.router)
 
 @app.on_event("startup")
 def startup():
-    sync_from_turso()
+    sync_from_cloud()
     init_db()
 
 

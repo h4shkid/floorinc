@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File
-from database import sync_to_turso
+from database import sync_to_cloud
 from models import ImportResponse
 from services.csv_importer import import_inventory, import_sales
 
@@ -17,7 +17,7 @@ async def upload_inventory(file: UploadFile = File(...)):
 
     result = import_inventory(tmp_path)
     Path(tmp_path).unlink(missing_ok=True)
-    sync_to_turso()
+    sync_to_cloud()
     return ImportResponse(**result)
 
 
@@ -30,5 +30,5 @@ async def upload_sales(file: UploadFile = File(...)):
 
     result = import_sales(tmp_path)
     Path(tmp_path).unlink(missing_ok=True)
-    sync_to_turso()
+    sync_to_cloud()
     return ImportResponse(**result)
