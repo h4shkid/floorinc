@@ -54,106 +54,60 @@ def execute_suiteql(query: str, limit: int = 1000, offset: int = 0, session: OAu
     return resp.json()
 
 
-def _paginate_single_query(
-    query: str,
-    progress_callback: Callable[[int, int], None] | None = None,
-    max_workers: int = 5,
-    total_offset: int = 0,
-    grand_total: int | None = None,
-) -> list[dict]:
-    """Paginate a single query that stays within NetSuite's 100K offset limit."""
-    limit = 1000
-    max_offset = 99000  # NetSuite 404s beyond offset 100K
-
-    # First request to get totalResults
-    first = execute_suiteql(query, limit=limit, offset=0)
-    total = first.get("totalResults", len(first.get("items", [])))
-    first_items = first.get("items", [])
-    report_total = grand_total or total
-
-    if progress_callback:
-        progress_callback(total_offset + len(first_items), report_total)
-
-    if not first.get("hasMore", False):
-        return first_items
-
-    # Cap offsets at max_offset to avoid 404
-    capped_total = min(total, max_offset + limit)
-    offsets = list(range(limit, capped_total, limit))
-
-    results: dict[int, list[dict]] = {0: first_items}
-    fetched_count = len(first_items)
-    lock = Lock()
-
-    def fetch_page(offset: int) -> tuple[int, list[dict]]:
-        session = _get_session()
-        data = execute_suiteql(query, limit=limit, offset=offset, session=session)
-        return offset, data.get("items", [])
-
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = {pool.submit(fetch_page, o): o for o in offsets}
-        for future in as_completed(futures):
-            offset, items = future.result()
-            with lock:
-                results[offset] = items
-                fetched_count += len(items)
-                if progress_callback:
-                    progress_callback(total_offset + fetched_count, report_total)
-
-    # Reassemble in order
-    all_items: list[dict] = []
-    for offset in sorted(results.keys()):
-        all_items.extend(results[offset])
-
-    return all_items
-
-
 def execute_suiteql_paginated(
     query: str,
     progress_callback: Callable[[int, int], None] | None = None,
     max_workers: int = 5,
 ) -> list[dict]:
-    """Paginate a SuiteQL query. Handles NetSuite's 100K offset limit
-    by splitting into date-range chunks for large result sets."""
+    """Paginate a SuiteQL query with parallel fetching.
+    Follows hasMore instead of trusting totalResults (NetSuite caps it at 5000).
+    Stays within NetSuite's 100K offset limit — caller must chunk large queries."""
     limit = 1000
+    max_offset = 99000
 
-    # Probe total size first
-    first = execute_suiteql(query, limit=1, offset=0)
-    total = first.get("totalResults", 0)
+    # First request — sequential to discover hasMore
+    first = execute_suiteql(query, limit=limit, offset=0)
+    first_items = first.get("items", [])
 
-    if total <= 100000:
-        # Fits within NetSuite's offset limit — single parallel fetch
-        return _paginate_single_query(query, progress_callback, max_workers)
+    if not first.get("hasMore", False):
+        return first_items
 
-    # Large result set — split by quarterly date ranges
-    # Detect the date column pattern in the query to build chunked queries
-    from datetime import date, timedelta
+    # Compute offsets up to the 100K cap
+    offsets = list(range(limit, max_offset + limit, limit))
 
-    today = date.today()
-    chunk_months = 3  # quarterly chunks to stay under 100K per chunk
-    chunks: list[tuple[str, str]] = []
-    end = today
-    start_limit = today - timedelta(days=18 * 30)  # ~18 months back
+    results: dict[int, list[dict]] = {0: first_items}
+    fetched_count = len(first_items)
+    done = False
+    lock = Lock()
 
-    while end > start_limit:
-        chunk_start = end - timedelta(days=chunk_months * 30)
-        if chunk_start < start_limit:
-            chunk_start = start_limit
-        chunks.append((chunk_start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")))
-        end = chunk_start - timedelta(days=1)
+    def fetch_page(offset: int) -> tuple[int, list[dict], bool]:
+        session = _get_session()
+        data = execute_suiteql(query, limit=limit, offset=offset, session=session)
+        items = data.get("items", [])
+        has_more = data.get("hasMore", False)
+        return offset, items, has_more
 
+    # Fetch in batches to allow early stop when hasMore=False
+    batch_size = max_workers * 4
+    for batch_start in range(0, len(offsets), batch_size):
+        if done:
+            break
+        batch = offsets[batch_start:batch_start + batch_size]
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {pool.submit(fetch_page, o): o for o in batch}
+            for future in as_completed(futures):
+                offset, items, has_more = future.result()
+                with lock:
+                    results[offset] = items
+                    fetched_count += len(items)
+                    if progress_callback:
+                        progress_callback(fetched_count, fetched_count if has_more else fetched_count)
+                    if not has_more and offset == max(o for o in results.keys()):
+                        done = True
+
+    # Reassemble in order
     all_items: list[dict] = []
-
-    for chunk_start, chunk_end in reversed(chunks):
-        # Replace the date filter in the query with a specific range
-        chunk_query = query.replace(
-            "AND t.tranDate >= ADD_MONTHS(SYSDATE, -18)",
-            f"AND t.tranDate >= TO_DATE('{chunk_start}', 'YYYY-MM-DD') AND t.tranDate <= TO_DATE('{chunk_end}', 'YYYY-MM-DD')"
-        )
-        chunk_items = _paginate_single_query(
-            chunk_query, progress_callback, max_workers,
-            total_offset=len(all_items), grand_total=total,
-        )
-        all_items.extend(chunk_items)
+    for offset in sorted(results.keys()):
+        all_items.extend(results[offset])
 
     return all_items

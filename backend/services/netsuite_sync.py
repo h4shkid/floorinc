@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from database import get_connection, sync_to_turso
 from services.netsuite_client import execute_suiteql_paginated
 from services.sync_status import sync_status
@@ -106,24 +108,22 @@ def sync_inventory(progress_callback=None):
     return len(records)
 
 
-def sync_sales(progress_callback=None):
-    """Pull sales from NetSuite. Incremental: only fetches records newer than what's already in DB."""
+def _build_monthly_chunks(start_date: date, end_date: date) -> list[tuple[str, str]]:
+    """Build monthly date ranges for chunked queries."""
+    chunks = []
+    current = start_date
+    while current <= end_date:
+        chunk_end = (current.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        if chunk_end > end_date:
+            chunk_end = end_date
+        chunks.append((current.strftime("%Y-%m-%d"), chunk_end.strftime("%Y-%m-%d")))
+        current = chunk_end + timedelta(days=1)
+    return chunks
 
-    # Check the latest order_date we already have
-    conn = get_connection()
-    row = conn.execute("SELECT MAX(order_date) FROM sales").fetchone()
-    last_date = row[0] if row and row[0] else None
-    conn.close()
 
-    if last_date:
-        # Incremental sync — only fetch sales after the last date we have
-        # Delete records from last_date to avoid duplicates (partial day)
-        date_filter = f"AND t.tranDate >= TO_DATE('{last_date}', 'YYYY-MM-DD')"
-    else:
-        # First sync — fetch last 18 months
-        date_filter = "AND t.tranDate >= ADD_MONTHS(SYSDATE, -18)"
-
-    sales_query = f"""
+def _fetch_sales_chunk(chunk_start: str, chunk_end: str) -> list[dict]:
+    """Fetch one month of sales from NetSuite."""
+    query = f"""
         SELECT
             TO_CHAR(t.tranDate, 'YYYY-MM-DD') AS order_date,
             item.itemId AS sku,
@@ -136,48 +136,70 @@ def sync_sales(progress_callback=None):
         JOIN item ON item.id = tl.item
         WHERE tl.mainLine = 'F'
           AND tl.itemType = 'InvtPart'
-          {date_filter}
+          AND t.tranDate >= TO_DATE('{chunk_start}', 'YYYY-MM-DD')
+          AND t.tranDate <= TO_DATE('{chunk_end}', 'YYYY-MM-DD')
           AND tl.quantity < 0
     """
+    return execute_suiteql_paginated(query)
 
-    def sales_progress(fetched, total):
-        pct = 50 + int((fetched / total) * 50)
+
+def sync_sales(progress_callback=None):
+    """Pull sales from NetSuite in monthly chunks to stay within 100K offset limit.
+    Incremental: only fetches months newer than what's already in DB."""
+
+    # Check the latest order_date we already have
+    conn = get_connection()
+    row = conn.execute("SELECT MAX(order_date) FROM sales").fetchone()
+    last_date = row[0] if row and row[0] else None
+    conn.close()
+
+    today = date.today()
+
+    if last_date:
+        start = date.fromisoformat(last_date)
+    else:
+        start = today - timedelta(days=18 * 30)
+
+    chunks = _build_monthly_chunks(start, today)
+    total_chunks = len(chunks)
+    all_records = []
+
+    for i, (chunk_start, chunk_end) in enumerate(chunks):
+        pct = 50 + int((i / total_chunks) * 48)
         if progress_callback:
-            progress_callback("sales", pct, f"Fetching sales data... {fetched:,}/{total:,}")
+            progress_callback("sales", pct, f"Fetching sales {chunk_start} to {chunk_end}... ({i+1}/{total_chunks} months)")
 
-    rows = execute_suiteql_paginated(sales_query, progress_callback=sales_progress)
+        rows = _fetch_sales_chunk(chunk_start, chunk_end)
 
-    records = []
-    for r in rows:
-        sku = r.get("sku", "")
-        if not sku:
-            continue
-        records.append({
-            "order_date": r.get("order_date", ""),
-            "sku": sku,
-            "quantity": int(float(r.get("quantity") or 0)),
-            "channel": _map_channel(r.get("channel")),
-            "product_category": None,
-            "item_revenue": float(r.get("item_revenue") or 0),
-            "product_cost": 0.0,
-            "product_name": r.get("product_name") or "",
-        })
+        for r in rows:
+            sku = r.get("sku", "")
+            if not sku:
+                continue
+            all_records.append({
+                "order_date": r.get("order_date", ""),
+                "sku": sku,
+                "quantity": int(float(r.get("quantity") or 0)),
+                "channel": _map_channel(r.get("channel")),
+                "product_category": None,
+                "item_revenue": float(r.get("item_revenue") or 0),
+                "product_cost": 0.0,
+                "product_name": r.get("product_name") or "",
+            })
 
     conn = get_connection()
     if last_date:
-        # Remove records from last_date onward to avoid duplicates, then insert fresh
         conn.execute("DELETE FROM sales WHERE order_date >= ?", (last_date,))
     else:
         conn.execute("DELETE FROM sales")
     conn.executemany(
         """INSERT INTO sales (order_date, sku, quantity, channel, product_category, item_revenue, product_cost, product_name)
            VALUES (:order_date, :sku, :quantity, :channel, :product_category, :item_revenue, :product_cost, :product_name)""",
-        records,
+        all_records,
     )
     conn.commit()
     conn.close()
 
-    return len(records)
+    return len(all_records)
 
 
 def run_full_sync():
