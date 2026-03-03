@@ -260,7 +260,7 @@ def get_sku_detail(sku: str):
     fin = conn.execute(
         """
         SELECT COALESCE(SUM(item_revenue), 0) AS revenue,
-               COALESCE(SUM(product_cost * quantity), 0) AS cost
+               COALESCE(SUM(quantity), 0) AS qty_sold
         FROM sales
         WHERE sku = ? AND order_date >= ? AND item_revenue > 0
         """,
@@ -277,8 +277,10 @@ def get_sku_detail(sku: str):
     conn.close()
 
     total_revenue = round(fin["revenue"], 2)
-    total_cost = round(fin["cost"], 2)
-    margin = round((total_revenue - total_cost) / total_revenue * 100, 1) if total_revenue > 0 else None
+    item_cost = float(r.get("item_cost", 0) or 0)
+    qty_sold_90d = int(fin["qty_sold"])
+    total_cost = round(item_cost * qty_sold_90d, 2) if item_cost > 0 else 0.0
+    margin = round((total_revenue - total_cost) / total_revenue * 100, 1) if total_revenue > 0 and total_cost > 0 else None
 
     return SKUDetailResponse(
         sku=r["sku"],
