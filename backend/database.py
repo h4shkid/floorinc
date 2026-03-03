@@ -55,10 +55,12 @@ def sync_to_turso():
 
         # Clear remote table
         remote.execute(f"DELETE FROM {table}")
+        remote.commit()
 
-        # Read local and write to remote in batches
+        # Read local and write to remote in small batches, commit each
         cursor = local.execute(f"SELECT {col_list} FROM {table}")
-        batch_size = 5000
+        batch_size = 500
+        total = 0
         while True:
             rows = cursor.fetchmany(batch_size)
             if not rows:
@@ -68,7 +70,9 @@ def sync_to_turso():
                 f"INSERT INTO {table} ({col_list}) VALUES ({placeholders})",
                 values,
             )
-        remote.commit()
+            remote.commit()
+            total += len(rows)
+        print(f"  Turso: pushed {total:,} rows to {table}")
 
     local.close()
     remote.close()
