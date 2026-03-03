@@ -153,6 +153,9 @@ def get_dashboard(
             total_sold_90d=int(r["total_sold_90d"]),
             total_revenue_90d=round(r.get("total_revenue_90d", 0) or 0, 2),
             manufacturer=r["manufacturer"] or None,
+            item_cost=_safe_float(r.get("item_cost", 0), 2) or 0.0,
+            qty_on_order=int(r.get("qty_on_order", 0)),
+            qty_committed=int(r.get("qty_committed", 0)),
         )
         for _, r in page_df.iterrows()
     ]
@@ -289,6 +292,9 @@ def get_sku_detail(sku: str):
         days_remaining=_safe_float(r["days_remaining"], 1),
         product_category=r["product_category"] or None,
         manufacturer=r["manufacturer"] or None,
+        item_cost=_safe_float(r.get("item_cost", 0), 2) or 0.0,
+        qty_on_order=int(r.get("qty_on_order", 0)),
+        qty_committed=int(r.get("qty_committed", 0)),
         monthly_sales=monthly_sales,
         channel_breakdown=channel_breakdown,
         recent_orders=recent_orders,

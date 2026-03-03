@@ -138,6 +138,9 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                   {data.on_hand.toLocaleString()}
                 </div>
                 <div className="text-[11px] text-slate-500 dark:text-slate-400">on hand</div>
+                {data.qty_on_order > 0 && (
+                  <div className="text-[11px] text-green-600 dark:text-green-400 mt-0.5">+{data.qty_on_order.toLocaleString()} on order</div>
+                )}
               </div>
               <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-center">
                 <div className={`text-lg font-bold tabular-nums ${
@@ -192,10 +195,22 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                   <span className="text-slate-600 dark:text-slate-400">Lead Time</span>
                   <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">{data.lead_time_days} days</span>
                 </div>
+                {data.item_cost > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Unit Cost</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">${data.item_cost.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between border-t border-slate-200 dark:border-slate-600 pt-1.5">
                   <span className="text-slate-600 dark:text-slate-400">Revenue (90d)</span>
                   <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{fmtCurrency(data.total_revenue_90d)}</span>
                 </div>
+                {data.margin_90d !== null && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Margin (90d)</span>
+                    <span className={`font-semibold tabular-nums ${data.margin_90d >= 30 ? "text-green-600 dark:text-green-400" : data.margin_90d >= 15 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>{data.margin_90d.toFixed(1)}%</span>
+                  </div>
+                )}
               </div>
             </div>
 

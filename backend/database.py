@@ -95,17 +95,19 @@ def init_db():
     conn.commit()
 
     # Migrations — add columns to existing tables
-    try:
-        conn.execute("ALTER TABLE inventory ADD COLUMN manufacturer TEXT DEFAULT ''")
-        conn.commit()
-    except Exception:
-        pass  # Column already exists
-
-    try:
-        conn.execute("ALTER TABLE sales ADD COLUMN raw_channel TEXT")
-        conn.commit()
-    except Exception:
-        pass  # Column already exists
+    migrations = [
+        "ALTER TABLE inventory ADD COLUMN manufacturer TEXT DEFAULT ''",
+        "ALTER TABLE inventory ADD COLUMN item_cost REAL DEFAULT 0",
+        "ALTER TABLE inventory ADD COLUMN qty_on_order INTEGER DEFAULT 0",
+        "ALTER TABLE inventory ADD COLUMN qty_committed INTEGER DEFAULT 0",
+        "ALTER TABLE sales ADD COLUMN raw_channel TEXT",
+    ]
+    for sql in migrations:
+        try:
+            conn.execute(sql)
+            conn.commit()
+        except Exception:
+            pass  # Column already exists
 
     # Migrate channel values to match updated CHANNEL_MAP
     conn.executescript("""

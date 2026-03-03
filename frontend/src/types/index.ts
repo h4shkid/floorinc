@@ -14,6 +14,9 @@ export interface ForecastItem {
   total_sold_90d: number;
   total_revenue_90d: number;
   manufacturer: string | null;
+  item_cost: number;
+  qty_on_order: number;
+  qty_committed: number;
 }
 
 export interface DashboardTotals {
@@ -120,6 +123,9 @@ export interface SKUDetail {
   days_remaining: number | null;
   product_category: string | null;
   manufacturer: string | null;
+  item_cost: number;
+  qty_on_order: number;
+  qty_committed: number;
   monthly_sales: MonthlySales[];
   channel_breakdown: ChannelBreakdown[];
   recent_orders: RecentOrder[];

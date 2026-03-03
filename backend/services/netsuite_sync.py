@@ -33,12 +33,14 @@ def _map_channel(raw: str | None) -> str:
 def sync_inventory(progress_callback=None):
     """Pull inventory from NetSuite: stock quantities + vendor names."""
 
-    # Query 1: stock quantities from TN DC warehouse (location ID 3)
+    # Query 1: stock quantities + order data from TN DC warehouse (location ID 3)
     qty_query = """
         SELECT
             item.itemId AS sku,
             item.displayName AS display_name,
-            SUM(loc.quantityAvailable) AS on_hand
+            SUM(loc.quantityAvailable) AS on_hand,
+            SUM(loc.quantityOnOrder) AS qty_on_order,
+            SUM(loc.quantityCommitted) AS qty_committed
         FROM inventoryItem item
         JOIN inventoryItemLocations loc ON loc.item = item.id
         WHERE item.isInactive = 'F'
@@ -63,13 +65,16 @@ def sync_inventory(progress_callback=None):
             "sku": sku,
             "display_name": r.get("display_name") or sku,
             "on_hand": int(float(r.get("on_hand") or 0)),
+            "qty_on_order": int(float(r.get("qty_on_order") or 0)),
+            "qty_committed": int(float(r.get("qty_committed") or 0)),
         }
 
-    # Query 2: vendor/manufacturer names
+    # Query 2: vendor/manufacturer names + item cost
     vendor_query = """
         SELECT
             item.itemId AS sku,
-            vendor.companyName AS manufacturer
+            vendor.companyName AS manufacturer,
+            item.cost AS item_cost
         FROM inventoryItem item
         LEFT JOIN vendor ON vendor.id = item.vendor
         WHERE item.isInactive = 'F'
@@ -86,6 +91,7 @@ def sync_inventory(progress_callback=None):
         sku = r.get("sku", "")
         if sku in inv_map:
             inv_map[sku]["manufacturer"] = r.get("manufacturer") or ""
+            inv_map[sku]["item_cost"] = float(r.get("item_cost") or 0)
 
     # Flag samples and insert
     records = []
@@ -102,12 +108,16 @@ def sync_inventory(progress_callback=None):
             "on_hand": item["on_hand"],
             "is_sample": is_sample,
             "manufacturer": item.get("manufacturer", ""),
+            "item_cost": item.get("item_cost", 0),
+            "qty_on_order": item.get("qty_on_order", 0),
+            "qty_committed": item.get("qty_committed", 0),
         })
 
     conn = get_connection()
     conn.execute("DELETE FROM inventory")
     conn.executemany(
-        "INSERT INTO inventory (sku, display_name, on_hand, is_sample, manufacturer) VALUES (:sku, :display_name, :on_hand, :is_sample, :manufacturer)",
+        """INSERT INTO inventory (sku, display_name, on_hand, is_sample, manufacturer, item_cost, qty_on_order, qty_committed)
+           VALUES (:sku, :display_name, :on_hand, :is_sample, :manufacturer, :item_cost, :qty_on_order, :qty_committed)""",
         records,
     )
     conn.commit()
