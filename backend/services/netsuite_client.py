@@ -54,29 +54,33 @@ def execute_suiteql(query: str, limit: int = 1000, offset: int = 0, session: OAu
     return resp.json()
 
 
-def execute_suiteql_paginated(
+def _paginate_single_query(
     query: str,
     progress_callback: Callable[[int, int], None] | None = None,
     max_workers: int = 5,
+    total_offset: int = 0,
+    grand_total: int | None = None,
 ) -> list[dict]:
+    """Paginate a single query that stays within NetSuite's 100K offset limit."""
     limit = 1000
+    max_offset = 99000  # NetSuite 404s beyond offset 100K
 
     # First request to get totalResults
     first = execute_suiteql(query, limit=limit, offset=0)
     total = first.get("totalResults", len(first.get("items", [])))
     first_items = first.get("items", [])
+    report_total = grand_total or total
 
-    if progress_callback and total:
-        progress_callback(len(first_items), total)
+    if progress_callback:
+        progress_callback(total_offset + len(first_items), report_total)
 
     if not first.get("hasMore", False):
         return first_items
 
-    # Calculate all remaining offsets
-    offsets = list(range(limit, total, limit))
+    # Cap offsets at max_offset to avoid 404
+    capped_total = min(total, max_offset + limit)
+    offsets = list(range(limit, capped_total, limit))
 
-    # Fetch remaining pages in parallel
-    # Each thread gets its own OAuth session (they're not thread-safe)
     results: dict[int, list[dict]] = {0: first_items}
     fetched_count = len(first_items)
     lock = Lock()
@@ -93,12 +97,63 @@ def execute_suiteql_paginated(
             with lock:
                 results[offset] = items
                 fetched_count += len(items)
-                if progress_callback and total:
-                    progress_callback(fetched_count, total)
+                if progress_callback:
+                    progress_callback(total_offset + fetched_count, report_total)
 
     # Reassemble in order
     all_items: list[dict] = []
     for offset in sorted(results.keys()):
         all_items.extend(results[offset])
+
+    return all_items
+
+
+def execute_suiteql_paginated(
+    query: str,
+    progress_callback: Callable[[int, int], None] | None = None,
+    max_workers: int = 5,
+) -> list[dict]:
+    """Paginate a SuiteQL query. Handles NetSuite's 100K offset limit
+    by splitting into date-range chunks for large result sets."""
+    limit = 1000
+
+    # Probe total size first
+    first = execute_suiteql(query, limit=1, offset=0)
+    total = first.get("totalResults", 0)
+
+    if total <= 100000:
+        # Fits within NetSuite's offset limit — single parallel fetch
+        return _paginate_single_query(query, progress_callback, max_workers)
+
+    # Large result set — split by quarterly date ranges
+    # Detect the date column pattern in the query to build chunked queries
+    from datetime import date, timedelta
+
+    today = date.today()
+    chunk_months = 3  # quarterly chunks to stay under 100K per chunk
+    chunks: list[tuple[str, str]] = []
+    end = today
+    start_limit = today - timedelta(days=18 * 30)  # ~18 months back
+
+    while end > start_limit:
+        chunk_start = end - timedelta(days=chunk_months * 30)
+        if chunk_start < start_limit:
+            chunk_start = start_limit
+        chunks.append((chunk_start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")))
+        end = chunk_start - timedelta(days=1)
+
+    all_items: list[dict] = []
+
+    for chunk_start, chunk_end in reversed(chunks):
+        # Replace the date filter in the query with a specific range
+        chunk_query = query.replace(
+            "AND t.tranDate >= ADD_MONTHS(SYSDATE, -18)",
+            f"AND t.tranDate >= TO_DATE('{chunk_start}', 'YYYY-MM-DD') AND t.tranDate <= TO_DATE('{chunk_end}', 'YYYY-MM-DD')"
+        )
+        chunk_items = _paginate_single_query(
+            chunk_query, progress_callback, max_workers,
+            total_offset=len(all_items), grand_total=total,
+        )
+        all_items.extend(chunk_items)
 
     return all_items
