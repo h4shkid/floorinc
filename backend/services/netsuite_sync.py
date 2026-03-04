@@ -164,7 +164,7 @@ def _fetch_sales_chunk(chunk_start: str, chunk_end: str) -> list[dict]:
             tl.quantity AS quantity,
             t.custbody_fa_channel AS channel,
             item.displayName AS product_name,
-            tl.netAmount AS item_revenue
+            CASE WHEN tl.netAmount IS NOT NULL AND tl.netAmount != 0 THEN tl.netAmount ELSE tl.rate * tl.quantity END AS item_revenue
         FROM transactionLine tl
         JOIN transaction t ON t.id = tl.transaction
         JOIN item ON item.id = tl.item
