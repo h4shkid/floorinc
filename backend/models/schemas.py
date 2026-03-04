@@ -34,6 +34,7 @@ class ForecastItem(BaseModel):
     qty_on_order: int = 0
     qty_committed: int = 0
     incoming_qty: int = 0
+    is_drop_ship: int = 0
 
 
 class ForecastSummary(BaseModel):
@@ -58,6 +59,10 @@ class DashboardResponse(BaseModel):
     page_size: int
     summary: ForecastSummary
     totals: DashboardTotals = DashboardTotals()
+
+
+class DropShipUpdate(BaseModel):
+    is_drop_ship: int
 
 
 class LeadTimeUpdate(BaseModel):

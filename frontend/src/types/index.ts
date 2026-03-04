@@ -18,6 +18,7 @@ export interface ForecastItem {
   qty_on_order: number;
   qty_committed: number;
   incoming_qty: number;
+  is_drop_ship: number;
 }
 
 export interface PurchaseOrderLine {

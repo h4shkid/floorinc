@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { ForecastItem, DashboardTotals } from "../../types";
-import { updateLeadTime } from "../../api/client";
+import { updateLeadTime, updateDropShip } from "../../api/client";
 import { UrgencyBadge } from "./UrgencyBadge";
 
 interface Props {
@@ -110,6 +110,37 @@ function LeadTimeCell({ sku, value, onSaved }: { sku: string; value: number; onS
   );
 }
 
+function DropShipBadge({ sku, isDropShip, onChanged }: { sku: string; isDropShip: boolean; onChanged: () => void }) {
+  const [saving, setSaving] = useState(false);
+
+  async function toggle(e: React.MouseEvent) {
+    e.stopPropagation();
+    setSaving(true);
+    try {
+      await updateDropShip(sku, !isDropShip);
+      onChanged();
+    } catch { /* ignore */ }
+    setSaving(false);
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      disabled={saving}
+      title={`Click to mark as ${isDropShip ? "warehoused" : "drop ship"}`}
+      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
+        saving ? "opacity-50 cursor-wait" : "cursor-pointer"
+      } ${
+        isDropShip
+          ? "bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/50"
+          : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600"
+      }`}
+    >
+      {isDropShip ? "Drop Ship" : "Warehoused"}
+    </button>
+  );
+}
+
 export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLeadTimeChanged, totals, velocityWindow = 90 }: Props) {
   const COLUMNS = getColumns(velocityWindow);
   const arrow = (col: string) => {
@@ -164,13 +195,16 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
                 <UrgencyBadge urgency={item.urgency} />
               </td>
 
-              {/* Product — SKU + name stacked */}
+              {/* Product — SKU + name stacked + drop ship badge */}
               <td className="px-2 py-1.5 overflow-hidden" title={`${item.sku}\n${item.display_name}`}>
                 <div className="truncate font-medium text-slate-900 dark:text-slate-100 leading-tight">
                   {item.display_name}
                 </div>
-                <div className="truncate text-[11px] text-slate-400 dark:text-slate-500 font-mono leading-tight">
-                  {item.sku}
+                <div className="flex items-center gap-1.5 leading-tight">
+                  <span className="truncate text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+                    {item.sku}
+                  </span>
+                  <DropShipBadge sku={item.sku} isDropShip={item.is_drop_ship === 1} onChanged={() => onLeadTimeChanged?.()} />
                 </div>
               </td>
 

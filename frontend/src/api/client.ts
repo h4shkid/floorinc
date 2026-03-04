@@ -76,6 +76,14 @@ export async function triggerSalesSync(): Promise<{ message: string }> {
   return fetchJSON<{ message: string }>(`${BASE}/netsuite/sync/sales`, { method: "POST" });
 }
 
+export async function updateDropShip(sku: string, isDropShip: boolean): Promise<{ sku: string; is_drop_ship: number }> {
+  return fetchJSON<{ sku: string; is_drop_ship: number }>(`${BASE}/inventory/${encodeURIComponent(sku)}/drop-ship`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ is_drop_ship: isDropShip ? 1 : 0 }),
+  });
+}
+
 export async function fetchDataStats(): Promise<DataStats> {
   return fetchJSON<DataStats>(`${BASE}/forecast/data-stats`);
 }

@@ -97,15 +97,15 @@ def get_dashboard(
 ):
     df = build_forecast(velocity_window, active_only=active_only)
 
-    # Stock type filter
+    # Stock type filter — warehoused views exclude confirmed drop ship items
     if stock_filter == "warehoused":
-        df = df[(df["is_warehoused"] == 1) | (df["is_drop_ship"] == 0)]
+        df = df[df["is_drop_ship"] != 1]
     elif stock_filter == "warehoused_domestic":
-        df = df[((df["is_warehoused"] == 1) | (df["is_drop_ship"] == 0)) & (df["source_type"] == "Domestic")]
+        df = df[(df["is_drop_ship"] != 1) & (df["source_type"] == "Domestic")]
     elif stock_filter == "warehoused_international":
-        df = df[((df["is_warehoused"] == 1) | (df["is_drop_ship"] == 0)) & (df["source_type"] == "International")]
+        df = df[(df["is_drop_ship"] != 1) & (df["source_type"] == "International")]
     elif stock_filter == "drop_ship":
-        df = df[(df["is_drop_ship"] == 1) & (df["is_warehoused"] == 0)]
+        df = df[df["is_drop_ship"] == 1]
     # "all" = no filter
 
     # Filters
@@ -170,6 +170,7 @@ def get_dashboard(
             qty_on_order=int(r.get("qty_on_order", 0)),
             qty_committed=int(r.get("qty_committed", 0)),
             incoming_qty=int(r.get("incoming_qty", 0)),
+            is_drop_ship=int(r.get("is_drop_ship", 0)),
         )
         for _, r in page_df.iterrows()
     ]
