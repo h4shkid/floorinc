@@ -81,12 +81,6 @@ export interface LeadTime {
   updated_at: string;
 }
 
-export interface ImportResult {
-  rows_imported: number;
-  rows_skipped: number;
-  message: string;
-}
-
 export interface DataStats {
   inventory_skus: number;
   total_transactions: number;

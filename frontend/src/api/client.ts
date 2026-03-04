@@ -1,4 +1,4 @@
-import type { DashboardResponse, DashboardParams, LeadTime, ImportResult, SKUDetail, SyncStatus, DataStats } from "../types";
+import type { DashboardResponse, DashboardParams, LeadTime, SKUDetail, SyncStatus, DataStats } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -48,12 +48,6 @@ export async function updateLeadTime(sku: string, lead_time_days: number, source
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ lead_time_days, source }),
   });
-}
-
-export async function uploadCSV(type: "inventory" | "sales", file: File): Promise<ImportResult> {
-  const form = new FormData();
-  form.append("file", file);
-  return fetchJSON<ImportResult>(`${BASE}/import/${type}`, { method: "POST", body: form });
 }
 
 export async function fetchManufacturers(): Promise<string[]> {
