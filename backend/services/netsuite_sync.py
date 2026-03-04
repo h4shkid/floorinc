@@ -1,4 +1,7 @@
+import logging
 from datetime import date, timedelta
+
+logger = logging.getLogger(__name__)
 
 from database import get_connection, sync_to_cloud
 from services.netsuite_client import execute_suiteql_paginated
@@ -196,8 +199,10 @@ def sync_sales(progress_callback=None):
     else:
         start = today - timedelta(days=18 * 30)
 
+    logger.info(f"Sales sync: last_date={last_date}, start={start}, today={today}")
     chunks = _build_monthly_chunks(start, today)
     total_chunks = len(chunks)
+    logger.info(f"Sales sync: {total_chunks} chunks to fetch")
     all_records = []
 
     for i, (chunk_start, chunk_end) in enumerate(chunks):
@@ -206,6 +211,7 @@ def sync_sales(progress_callback=None):
             progress_callback("sales", pct, f"Fetching sales {chunk_start} to {chunk_end}... ({i+1}/{total_chunks} months)")
 
         rows = _fetch_sales_chunk(chunk_start, chunk_end)
+        logger.info(f"Sales chunk {chunk_start} to {chunk_end}: {len(rows)} raw rows from NetSuite")
 
         for r in rows:
             sku = r.get("sku", "")
@@ -231,6 +237,8 @@ def sync_sales(progress_callback=None):
                 "product_name": r.get("product_name") or "",
                 "raw_channel": raw_ch,
             })
+
+    logger.info(f"Sales sync: {len(all_records)} total records after filtering")
 
     conn = get_connection()
     if last_date:
