@@ -186,12 +186,12 @@ function PreviewModal({
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-white dark:bg-slate-800">
                 <tr className="border-b border-slate-200 dark:border-slate-700 text-left">
-                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">SKU</th>
-                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400 text-right">On Hand</th>
-                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400 text-right">Committed</th>
-                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">Current</th>
-                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">New Value</th>
-                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">Reason</th>
+                  <th className="pb-2 px-3 font-medium text-slate-600 dark:text-slate-400">SKU</th>
+                  <th className="pb-2 px-3 font-medium text-slate-600 dark:text-slate-400 text-right">On Hand</th>
+                  <th className="pb-2 px-3 font-medium text-slate-600 dark:text-slate-400 text-right">Committed</th>
+                  <th className="pb-2 px-3 font-medium text-slate-600 dark:text-slate-400">Current</th>
+                  <th className="pb-2 px-3 font-medium text-slate-600 dark:text-slate-400">New Value</th>
+                  <th className="pb-2 px-3 font-medium text-slate-600 dark:text-slate-400">Reason</th>
                 </tr>
               </thead>
               <tbody>
@@ -204,14 +204,14 @@ function PreviewModal({
                       : "No POs";
                   return (
                     <tr key={r.sku} className="border-b border-slate-100 dark:border-slate-700/50">
-                      <td className="py-2 font-mono text-xs text-slate-900 dark:text-slate-100">{r.sku}</td>
-                      <td className={`py-2 text-right tabular-nums ${available < 0 ? "text-red-600 dark:text-red-400 font-medium" : "text-slate-700 dark:text-slate-300"}`}>
+                      <td className="py-2 px-3 font-mono text-xs text-slate-900 dark:text-slate-100">{r.sku}</td>
+                      <td className={`py-2 px-3 text-right tabular-nums ${available < 0 ? "text-red-600 dark:text-red-400 font-medium" : "text-slate-700 dark:text-slate-300"}`}>
                         {r.on_hand}
                       </td>
-                      <td className="py-2 text-right tabular-nums text-slate-500 dark:text-slate-400">{r.qty_committed}</td>
-                      <td className="py-2 text-slate-500 dark:text-slate-400">{r.current_value}</td>
-                      <td className="py-2 font-medium text-purple-700 dark:text-purple-300">{r.new_value}</td>
-                      <td className="py-2 text-xs text-slate-600 dark:text-slate-400">{reasonLabel}</td>
+                      <td className="py-2 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400">{r.qty_committed}</td>
+                      <td className="py-2 px-3 text-slate-500 dark:text-slate-400">{r.current_value}</td>
+                      <td className="py-2 px-3 font-medium text-purple-700 dark:text-purple-300">{r.new_value}</td>
+                      <td className="py-2 px-3 text-xs text-slate-600 dark:text-slate-400">{reasonLabel}</td>
                     </tr>
                   );
                 })}
