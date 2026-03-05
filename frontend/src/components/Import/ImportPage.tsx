@@ -169,7 +169,7 @@ function PreviewModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onCancel}>
       <div
-        className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col mx-4"
+        className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-5xl max-h-[80vh] flex flex-col mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -187,18 +187,34 @@ function PreviewModal({
               <thead className="sticky top-0 bg-white dark:bg-slate-800">
                 <tr className="border-b border-slate-200 dark:border-slate-700 text-left">
                   <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">SKU</th>
+                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400 text-right">On Hand</th>
+                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400 text-right">Committed</th>
                   <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">Current</th>
                   <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">New Value</th>
+                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">Reason</th>
                 </tr>
               </thead>
               <tbody>
-                {results.map((r) => (
-                  <tr key={r.sku} className="border-b border-slate-100 dark:border-slate-700/50">
-                    <td className="py-2 font-mono text-xs text-slate-900 dark:text-slate-100">{r.sku}</td>
-                    <td className="py-2 text-slate-500 dark:text-slate-400">{r.current_value}</td>
-                    <td className="py-2 font-medium text-purple-700 dark:text-purple-300">{r.new_value}</td>
-                  </tr>
-                ))}
+                {results.map((r) => {
+                  const available = r.on_hand - r.qty_committed;
+                  const reasonLabel = r.covering_po
+                    ? `${r.covering_po} (${r.covering_po_date ? new Date(r.covering_po_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "no date"})`
+                    : r.reason === "In stock"
+                      ? "In stock"
+                      : "No POs";
+                  return (
+                    <tr key={r.sku} className="border-b border-slate-100 dark:border-slate-700/50">
+                      <td className="py-2 font-mono text-xs text-slate-900 dark:text-slate-100">{r.sku}</td>
+                      <td className={`py-2 text-right tabular-nums ${available < 0 ? "text-red-600 dark:text-red-400 font-medium" : "text-slate-700 dark:text-slate-300"}`}>
+                        {r.on_hand}
+                      </td>
+                      <td className="py-2 text-right tabular-nums text-slate-500 dark:text-slate-400">{r.qty_committed}</td>
+                      <td className="py-2 text-slate-500 dark:text-slate-400">{r.current_value}</td>
+                      <td className="py-2 font-medium text-purple-700 dark:text-purple-300">{r.new_value}</td>
+                      <td className="py-2 text-xs text-slate-600 dark:text-slate-400">{reasonLabel}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

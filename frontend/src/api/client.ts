@@ -98,6 +98,12 @@ export interface AkeneoPreviewResult {
   sku: string;
   current_value: string;
   new_value: string;
+  on_hand: number;
+  qty_committed: number;
+  deficit: number;
+  covering_po: string | null;
+  covering_po_date: string | null;
+  reason: string;
 }
 
 export interface AkeneoPreviewStatus extends SyncStatus {

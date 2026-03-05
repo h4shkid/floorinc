@@ -17,11 +17,28 @@ def calculate_promise_date(
       PO expected_date if POs cover the deficit
       "Call for availability" otherwise
     """
+    result = calculate_promise_date_detail(on_hand, qty_committed, purchase_orders)
+    return result["promise_date"]
+
+
+def calculate_promise_date_detail(
+    on_hand: int, qty_committed: int, purchase_orders: list[dict]
+) -> dict:
+    """
+    Returns a dict with promise_date plus context for preview:
+      promise_date, deficit, covering_po, covering_po_date, reason
+    """
     available = on_hand - qty_committed
 
     # Stock covers committed — available to ship
     if on_hand > 0 and available > 0:
-        return ""
+        return {
+            "promise_date": "",
+            "deficit": 0,
+            "covering_po": None,
+            "covering_po_date": None,
+            "reason": "In stock",
+        }
 
     # Either no stock or committed exceeds on_hand
     # Need at least 1 unit from POs (or all of deficit)
@@ -41,11 +58,30 @@ def calculate_promise_date(
         cumulative += remaining
         if cumulative >= deficit:
             date = po.get("expected_date")
+            po_number = po.get("po_number")
             if date:
-                return date
-            return "Call for availability"
+                return {
+                    "promise_date": date,
+                    "deficit": deficit,
+                    "covering_po": po_number,
+                    "covering_po_date": date,
+                    "reason": "PO covers deficit",
+                }
+            return {
+                "promise_date": "Call for availability",
+                "deficit": deficit,
+                "covering_po": po_number,
+                "covering_po_date": None,
+                "reason": "PO has no date",
+            }
 
-    return "Call for availability"
+    return {
+        "promise_date": "Call for availability",
+        "deficit": deficit,
+        "covering_po": None,
+        "covering_po_date": None,
+        "reason": "No POs",
+    }
 
 
 def run_akeneo_sync():
@@ -190,9 +226,10 @@ def run_akeneo_preview():
                     f"Checking {i + 1}/{total} — {len(changes)} changes found",
                 )
 
-            new_value = calculate_promise_date(
+            detail = calculate_promise_date_detail(
                 on_hand, qty_committed, po_map.get(sku, [])
             )
+            new_value = detail["promise_date"]
 
             try:
                 product = get_product(sku)
@@ -210,6 +247,12 @@ def run_akeneo_preview():
                         "sku": sku,
                         "current_value": current_value or "(empty)",
                         "new_value": new_value or "(empty)",
+                        "on_hand": on_hand,
+                        "qty_committed": qty_committed,
+                        "deficit": detail["deficit"],
+                        "covering_po": detail["covering_po"],
+                        "covering_po_date": detail["covering_po_date"],
+                        "reason": detail["reason"],
                     })
             except Exception:
                 errors += 1
