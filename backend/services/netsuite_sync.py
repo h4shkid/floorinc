@@ -164,10 +164,10 @@ def _fetch_sales_chunk(chunk_start: str, chunk_end: str) -> list[dict]:
         SELECT
             TO_CHAR(t.tranDate, 'YYYY-MM-DD') AS order_date,
             item.itemId AS sku,
-            tl.quantity AS quantity,
+            ABS(tl.quantity) AS quantity,
             t.custbody_fa_channel AS channel,
             item.displayName AS product_name,
-            CASE WHEN tl.netAmount IS NOT NULL AND tl.netAmount != 0 THEN tl.netAmount ELSE tl.rate * tl.quantity END AS item_revenue
+            ABS(CASE WHEN tl.netAmount IS NOT NULL AND tl.netAmount != 0 THEN tl.netAmount ELSE tl.rate * tl.quantity END) AS item_revenue
         FROM transactionLine tl
         JOIN transaction t ON t.id = tl.transaction
         JOIN item ON item.id = tl.item
@@ -177,7 +177,7 @@ def _fetch_sales_chunk(chunk_start: str, chunk_end: str) -> list[dict]:
           AND tl.itemType IN ('InvtPart', 'Kit')
           AND t.tranDate >= TO_DATE('{chunk_start}', 'YYYY-MM-DD')
           AND t.tranDate <= TO_DATE('{chunk_end}', 'YYYY-MM-DD')
-          AND tl.quantity > 0
+          AND tl.quantity != 0
     """
     return execute_suiteql_paginated(query)
 
