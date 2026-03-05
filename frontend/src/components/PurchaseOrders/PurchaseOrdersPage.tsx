@@ -221,9 +221,7 @@ function DeliveryTimeline({ timeline }: { timeline: TimelineWeek[] }) {
           const barPct = m.qty / maxQty;
           return (
             <div key={m.key} className="flex-1 flex flex-col items-center justify-end" style={{ height: "100%" }}>
-              {barPct > 0.15 && (
-                <span className="text-[10px] tabular-nums text-slate-500 dark:text-slate-400 mb-0.5 font-medium">{m.qty.toLocaleString()}</span>
-              )}
+              <span className="text-[10px] tabular-nums text-slate-500 dark:text-slate-400 mb-0.5 font-medium">{m.qty.toLocaleString()}</span>
               <div
                 className="w-full bg-blue-500 dark:bg-blue-600 rounded-t transition-all hover:bg-blue-400 dark:hover:bg-blue-500 cursor-default"
                 style={{ height: `${barPct * 100}%`, minHeight: m.qty > 0 ? 4 : 0 }}
