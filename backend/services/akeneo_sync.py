@@ -47,20 +47,20 @@ def run_akeneo_sync():
     try:
         conn = get_connection()
 
-        # Get all warehoused SKUs with inventory data
+        # Only get SKUs with a deficit (qty_committed > on_hand)
         skus = conn.execute("""
             SELECT sku, on_hand, qty_committed
             FROM inventory
-            WHERE is_drop_ship = 0
+            WHERE is_drop_ship = 0 AND qty_committed > on_hand
         """).fetchall()
 
         total = len(skus)
         if total == 0:
-            akeneo_sync_status.complete("No warehoused SKUs found")
+            akeneo_sync_status.complete("No SKUs with deficit found — nothing to update")
             conn.close()
             return
 
-        akeneo_sync_status.update("calculating", 5, f"Processing {total} warehoused SKUs...")
+        akeneo_sync_status.update("calculating", 5, f"Processing {total} SKUs with deficit...")
 
         # Get all POs grouped by SKU
         po_rows = conn.execute("""
@@ -137,19 +137,19 @@ def run_akeneo_preview():
     try:
         conn = get_connection()
 
+        # Only get SKUs with a deficit (qty_committed > on_hand)
         skus = conn.execute("""
             SELECT sku, on_hand, qty_committed
             FROM inventory
-            WHERE is_drop_ship = 0
+            WHERE is_drop_ship = 0 AND qty_committed > on_hand
         """).fetchall()
 
-        total = len(skus)
-        if total == 0:
-            akeneo_preview_status.complete("No warehoused SKUs found")
+        if len(skus) == 0:
+            akeneo_preview_status.complete("No SKUs with deficit found — nothing to update")
             conn.close()
             return
 
-        akeneo_preview_status.update("calculating", 5, f"Processing {total} warehoused SKUs...")
+        akeneo_preview_status.update("calculating", 5, f"Found {len(skus)} SKUs with deficit...")
 
         po_rows = conn.execute("""
             SELECT sku, po_number, remaining_qty, expected_date
@@ -174,6 +174,7 @@ def run_akeneo_preview():
         unchanged = 0
         not_in_akeneo = 0
         errors = 0
+        total = len(skus)
 
         for i, row in enumerate(skus):
             sku, on_hand, qty_committed = row[0], row[1], row[2]
