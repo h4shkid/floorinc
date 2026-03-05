@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { SyncStatus } from "../../types";
-import { fetchSyncStatus, triggerNetSuiteSync, triggerSalesSync, fetchAkeneoStatus, triggerAkeneoSync } from "../../api/client";
+import {
+  fetchSyncStatus, triggerNetSuiteSync, triggerSalesSync,
+  fetchAkeneoStatus, triggerAkeneoSync,
+  triggerAkeneoPreview, fetchAkeneoPreviewStatus,
+} from "../../api/client";
+import type { AkeneoPreviewResult, AkeneoPreviewStatus } from "../../api/client";
 
 function NetSuiteSync() {
   const [status, setStatus] = useState<SyncStatus | null>(null);
@@ -141,51 +146,179 @@ function NetSuiteSync() {
   );
 }
 
-function AkeneoSync() {
-  const [status, setStatus] = useState<SyncStatus | null>(null);
-  const [triggering, setTriggering] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+function Spinner({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+}
 
-  const poll = useCallback(async () => {
+function PreviewModal({
+  results,
+  summary,
+  onConfirm,
+  onCancel,
+}: {
+  results: AkeneoPreviewResult[];
+  summary: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onCancel}>
+      <div
+        className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Promise Date Preview</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{summary}</p>
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 overflow-auto p-6">
+          {results.length === 0 ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-8">No changes to make — all values are up to date.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-white dark:bg-slate-800">
+                <tr className="border-b border-slate-200 dark:border-slate-700 text-left">
+                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">SKU</th>
+                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">Current</th>
+                  <th className="pb-2 font-medium text-slate-600 dark:text-slate-400">New Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r) => (
+                  <tr key={r.sku} className="border-b border-slate-100 dark:border-slate-700/50">
+                    <td className="py-2 font-mono text-xs text-slate-900 dark:text-slate-100">{r.sku}</td>
+                    <td className="py-2 text-slate-500 dark:text-slate-400">{r.current_value}</td>
+                    <td className="py-2 font-medium text-purple-700 dark:text-purple-300">{r.new_value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+          >
+            Cancel
+          </button>
+          {results.length > 0 && (
+            <button
+              onClick={onConfirm}
+              className="px-5 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Confirm & Sync ({results.length} SKUs)
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AkeneoSync() {
+  // Sync status (for actual push)
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Preview state
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewStatus, setPreviewStatus] = useState<AkeneoPreviewStatus | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [previewResults, setPreviewResults] = useState<AkeneoPreviewResult[]>([]);
+  const [previewSummary, setPreviewSummary] = useState("");
+  const previewIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Poll sync status
+  const pollSync = useCallback(async () => {
     try {
       const s = await fetchAkeneoStatus();
-      setStatus(s);
-      if (s.state !== "running" && intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+      setSyncStatus(s);
+      if (s.state !== "running" && syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
       }
     } catch {
-      // ignore polling errors
+      // ignore
     }
   }, []);
 
   useEffect(() => {
-    poll();
+    pollSync();
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
+      if (previewIntervalRef.current) clearInterval(previewIntervalRef.current);
     };
-  }, [poll]);
+  }, [pollSync]);
 
-  const startSync = async () => {
-    setTriggering(true);
+  // Poll preview status
+  const pollPreview = useCallback(async () => {
+    try {
+      const s = await fetchAkeneoPreviewStatus();
+      setPreviewStatus(s);
+      if (s.state !== "running") {
+        if (previewIntervalRef.current) {
+          clearInterval(previewIntervalRef.current);
+          previewIntervalRef.current = null;
+        }
+        setPreviewLoading(false);
+        if (s.state === "completed" && s.results) {
+          setPreviewResults(s.results);
+          setPreviewSummary(s.message || "");
+          setShowModal(true);
+        } else if (s.state === "error") {
+          setError(s.error || "Preview failed");
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Start preview
+  const startPreview = async () => {
+    setPreviewLoading(true);
     setError(null);
     try {
-      await triggerAkeneoSync();
-      intervalRef.current = setInterval(poll, 2000);
-      poll();
+      await triggerAkeneoPreview();
+      previewIntervalRef.current = setInterval(pollPreview, 2000);
+      pollPreview();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to start Akeneo sync");
-    } finally {
-      setTriggering(false);
+      setPreviewLoading(false);
+      setError(e instanceof Error ? e.message : "Failed to start preview");
     }
   };
 
-  if (!status || !status.configured) return null;
+  // Confirm sync after preview
+  const confirmSync = async () => {
+    setShowModal(false);
+    setError(null);
+    try {
+      await triggerAkeneoSync();
+      syncIntervalRef.current = setInterval(pollSync, 2000);
+      pollSync();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to start Akeneo sync");
+    }
+  };
 
-  const isRunning = status.state === "running";
-  const isCompleted = status.state === "completed";
-  const isError = status.state === "error";
+  if (!syncStatus || !syncStatus.configured) return null;
+
+  const isSyncing = syncStatus.state === "running";
+  const isSyncCompleted = syncStatus.state === "completed";
+  const isSyncError = syncStatus.state === "error";
+  const isBusy = isSyncing || previewLoading;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
@@ -197,16 +330,18 @@ function AkeneoSync() {
           </p>
         </div>
         <button
-          onClick={startSync}
-          disabled={isRunning || triggering}
+          onClick={startPreview}
+          disabled={isBusy}
           className="px-5 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
-          {isRunning ? (
+          {previewLoading ? (
             <>
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
+              <Spinner />
+              Loading Preview...
+            </>
+          ) : isSyncing ? (
+            <>
+              <Spinner />
               Updating...
             </>
           ) : (
@@ -215,35 +350,52 @@ function AkeneoSync() {
         </button>
       </div>
 
-      {isRunning && (
+      {/* Preview progress */}
+      {previewLoading && previewStatus?.state === "running" && (
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
-            <span>{status.message}</span>
-            <span>{status.progress}%</span>
+            <span>{previewStatus.message}</span>
+            <span>{previewStatus.progress}%</span>
           </div>
           <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
             <div
-              className="bg-purple-600 h-2.5 rounded-full transition-all duration-500"
-              style={{ width: `${status.progress}%` }}
+              className="bg-purple-400 h-2.5 rounded-full transition-all duration-500"
+              style={{ width: `${previewStatus.progress}%` }}
             />
           </div>
         </div>
       )}
 
-      {isCompleted && (
+      {/* Sync progress */}
+      {isSyncing && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+            <span>{syncStatus.message}</span>
+            <span>{syncStatus.progress}%</span>
+          </div>
+          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+            <div
+              className="bg-purple-600 h-2.5 rounded-full transition-all duration-500"
+              style={{ width: `${syncStatus.progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {isSyncCompleted && (
         <div className="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg p-3">
-          <p className="text-sm font-medium text-green-800 dark:text-green-300">{status.message}</p>
-          {status.last_sync_at && (
+          <p className="text-sm font-medium text-green-800 dark:text-green-300">{syncStatus.message}</p>
+          {syncStatus.last_sync_at && (
             <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-              Last synced: {new Date(status.last_sync_at).toLocaleString()}
+              Last synced: {new Date(syncStatus.last_sync_at).toLocaleString()}
             </p>
           )}
         </div>
       )}
 
-      {isError && (
+      {isSyncError && (
         <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg p-3">
-          <p className="text-sm font-medium text-red-800 dark:text-red-300">{status.error}</p>
+          <p className="text-sm font-medium text-red-800 dark:text-red-300">{syncStatus.error}</p>
         </div>
       )}
 
@@ -253,10 +405,20 @@ function AkeneoSync() {
         </div>
       )}
 
-      {!isRunning && !isCompleted && !isError && status.last_sync_at && (
+      {!isSyncing && !isSyncCompleted && !isSyncError && !previewLoading && syncStatus.last_sync_at && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Last synced: {new Date(status.last_sync_at).toLocaleString()}
+          Last synced: {new Date(syncStatus.last_sync_at).toLocaleString()}
         </p>
+      )}
+
+      {/* Preview Modal */}
+      {showModal && (
+        <PreviewModal
+          results={previewResults}
+          summary={previewSummary}
+          onConfirm={confirmSync}
+          onCancel={() => setShowModal(false)}
+        />
       )}
     </div>
   );

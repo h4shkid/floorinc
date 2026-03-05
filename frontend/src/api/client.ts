@@ -89,3 +89,22 @@ export async function fetchAkeneoStatus(): Promise<SyncStatus> {
 export async function triggerAkeneoSync(): Promise<{ message: string }> {
   return fetchJSON<{ message: string }>(`${BASE}/akeneo/sync`, { method: "POST" });
 }
+
+export async function triggerAkeneoPreview(): Promise<{ message: string }> {
+  return fetchJSON<{ message: string }>(`${BASE}/akeneo/preview`, { method: "POST" });
+}
+
+export interface AkeneoPreviewResult {
+  sku: string;
+  current_value: string;
+  new_value: string;
+}
+
+export interface AkeneoPreviewStatus extends SyncStatus {
+  results?: AkeneoPreviewResult[];
+  summary?: { total_changes: number };
+}
+
+export async function fetchAkeneoPreviewStatus(): Promise<AkeneoPreviewStatus> {
+  return fetchJSON<AkeneoPreviewStatus>(`${BASE}/akeneo/preview/status`);
+}
