@@ -265,7 +265,7 @@ export function PurchaseOrdersPage() {
       fetchVendorSummary(),
       fetchPOTimeline(),
     ]).then(([poData, vendorData, timelineData]) => {
-      setPOs(poData);
+      setPOs(poData.filter((po) => po.total_amount > 0));
       setVendors(vendorData);
       setTimeline(timelineData);
     }).catch(() => {}).finally(() => setLoading(false));
