@@ -19,25 +19,25 @@ const TOUR_STEPS: TourStep[] = [
   {
     target: "[data-tour='summary-cards']",
     title: "Summary Cards",
-    content: "These cards show a quick overview of your inventory health. Backorders and Red items need immediate attention, Yellow items are getting close, and Green means you're comfortable.",
+    content: "These cards show a quick overview of your inventory health. Backorders and Red items need immediate attention, Yellow items are getting close, and Green means you're comfortable. Counts are based on available stock (on hand minus committed).",
     placement: "bottom",
   },
   {
     target: "[data-tour='filter-bar']",
     title: "Filters",
-    content: "Use these filters to narrow down the table. Search by SKU or product name, filter by urgency, stock type (warehoused vs drop ship), category, manufacturer, and change the velocity window.",
+    content: "Use these filters to narrow down the table. Search by SKU, product name, or manufacturer. Filter by urgency, stock type (warehoused vs drop ship), category, manufacturer, and change the velocity window.",
     placement: "bottom",
   },
   {
     target: "[data-tour='table-header']",
     title: "Forecast Table",
-    content: "The main table showing all SKUs with inventory levels, sales velocity, seasonality, days remaining, and revenue. Click any column header to sort.",
+    content: "The main table showing all SKUs with available stock, sales velocity, seasonality, days remaining, and revenue. The 'Available' column shows on hand minus committed orders. Click any column header to sort.",
     placement: "bottom",
   },
   {
     target: "[data-tour='urgency-badge']",
     title: "Urgency Badge",
-    content: "The colored badge shows urgency: RED = order now, YELLOW = getting close, GREEN = comfortable, BACKORDER = already out of stock.",
+    content: "The colored badge shows urgency based on available stock: RED = order now (days left < lead time), YELLOW = getting close (days left < 1.5x lead time), GREEN = comfortable, BACKORDER = more committed than on hand.",
     placement: "right",
   },
   {
@@ -55,7 +55,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     target: "[data-tour='first-row']",
     title: "SKU Detail",
-    content: "Click any row to open a detail panel with monthly sales charts, channel breakdown, recent orders, purchase orders, and 90-day financials.",
+    content: "Click any row to open a detail panel showing available stock with physical/committed breakdown, net after receipt for out-of-stock items with POs, AI insights, purchase orders with line-level status, monthly sales, channel breakdown, and 90-day financials.",
     placement: "bottom",
   },
 ];

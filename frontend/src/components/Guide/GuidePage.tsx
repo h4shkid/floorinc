@@ -41,11 +41,12 @@ const sections: (Section & { defaultOpen?: boolean })[] = [
         <div className="space-y-2">
           <h4 className="font-semibold text-slate-800 dark:text-slate-200">Urgency Colors</h4>
           <ul className="list-disc list-inside space-y-1">
-            <li><span className="font-medium text-red-700 dark:text-red-400">BACKORDER</span> — on hand is negative, orders are waiting</li>
+            <li><span className="font-medium text-red-700 dark:text-red-400">BACKORDER</span> — available stock is negative (more committed than on hand)</li>
             <li><span className="font-medium text-red-600 dark:text-red-400">RED</span> — stock will run out before new inventory arrives (days remaining &lt; lead time)</li>
             <li><span className="font-medium text-amber-600 dark:text-amber-400">YELLOW</span> — stock is getting low, order soon (days remaining &lt; 1.5x lead time)</li>
             <li><span className="font-medium text-green-600 dark:text-green-400">GREEN</span> — stock levels are healthy</li>
           </ul>
+          <p>Urgency is based on <span className="font-semibold">available stock</span> (on hand minus committed orders), not physical on hand. This gives earlier warnings since committed units aren't available to sell.</p>
         </div>
       </>
     ),
@@ -55,11 +56,11 @@ const sections: (Section & { defaultOpen?: boolean })[] = [
     content: (
       <div className="space-y-2">
         <ul className="list-disc list-inside space-y-1.5">
-          <li><span className="font-semibold text-slate-800 dark:text-slate-200">On Hand</span> — current inventory in TN warehouse. Negative means backorder. If there's incoming stock from a PO, it shows below in blue.</li>
+          <li><span className="font-semibold text-slate-800 dark:text-slate-200">Available</span> — on hand minus committed orders. This is the stock actually available to sell. Negative means more is committed than in stock. If there's incoming stock from a PO, it shows below in blue.</li>
           <li><span className="font-semibold text-slate-800 dark:text-slate-200">Vel/d</span> — average units sold per day over the selected time window (default 90 days)</li>
           <li><span className="font-semibold text-slate-800 dark:text-slate-200">Szn</span> — seasonality multiplier comparing this period vs last year. Above 1.0x means demand is growing, below means declining.</li>
           <li><span className="font-semibold text-slate-800 dark:text-slate-200">Adj Vel</span> — velocity adjusted for seasonality. This is the actual forecasted daily demand.</li>
-          <li><span className="font-semibold text-slate-800 dark:text-slate-200">Days Left</span> — how many days of stock remain at the current sell rate (on hand / adjusted velocity)</li>
+          <li><span className="font-semibold text-slate-800 dark:text-slate-200">Days Left</span> — how many days of stock remain at the current sell rate (available stock / adjusted velocity)</li>
           <li><span className="font-semibold text-slate-800 dark:text-slate-200">LT</span> — lead time in days. How long it takes to receive new stock after ordering. Double-click to edit.</li>
           <li><span className="font-semibold text-slate-800 dark:text-slate-200">Ch</span> — top sales channel (FI = FlooringInc, AVC = Amazon Vendor Central, ASC = Amazon Seller Central, HD = Home Depot, WF = Wayfair, WM = Walmart)</li>
         </ul>
@@ -115,13 +116,15 @@ const sections: (Section & { defaultOpen?: boolean })[] = [
       <div className="space-y-2">
         <p>Click any row in the table to open the SKU detail panel on the right side. This shows:</p>
         <ul className="list-disc list-inside space-y-1">
+          <li><span className="font-semibold text-slate-800 dark:text-slate-200">Stock card</span> — available qty as the main number, with a breakdown showing physical on hand minus committed. For out-of-stock items with POs, shows "Net after receipt" so you know how much you'll have when orders arrive.</li>
+          <li>AI-generated insight with context-aware recommendations (when available)</li>
+          <li>Open purchase orders with line-level status (Pending / Partial / Received), ordered, received, and remaining quantities</li>
           <li>Monthly sales chart (last 12 months)</li>
           <li>Channel breakdown with revenue</li>
           <li>Recent individual orders</li>
-          <li>Open purchase orders with expected dates</li>
           <li>90-day financials (revenue, cost, margin)</li>
         </ul>
-        <p>Click the X or click outside the panel to close it.</p>
+        <p>Click the X, press Escape, or click outside the panel to close it.</p>
       </div>
     ),
   },
