@@ -55,7 +55,8 @@ def get_product(sku: str) -> dict | None:
 def update_promise_date(sku: str, value: str) -> bool:
     payload = {
         "values": {
-            "promise_date": [{"data": value, "locale": None, "scope": None}]
+            "promise_date": [{"data": value, "locale": None, "scope": None}],
+            "connector_magento_sync": [{"data": True, "locale": None, "scope": None}],
         }
     }
     resp = requests.patch(
