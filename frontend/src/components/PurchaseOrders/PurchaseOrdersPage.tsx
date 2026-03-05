@@ -253,6 +253,8 @@ export function PurchaseOrdersPage() {
   const [sortKey, setSortKey] = useState<SortKey>("expected");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [showSamples, setShowSamples] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   useEffect(() => {
     const id = setTimeout(() => setSearchDebounced(search), 300);
@@ -272,7 +274,7 @@ export function PurchaseOrdersPage() {
     }).catch(() => {}).finally(() => setLoading(false));
   }, [searchDebounced, vendorFilter]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(); setPage(1); }, [loadData]);
 
   const vendorNames = useMemo(() => vendors.map((v) => v.vendor).sort(), [vendors]);
 
@@ -285,11 +287,14 @@ export function PurchaseOrdersPage() {
       setSortDir(key === "remaining" || key === "amount" || key === "items" ? "desc" : "asc");
       return key;
     });
+    setPage(1);
   }, []);
 
   const regularPOs = useMemo(() => pos.filter((po) => po.total_amount > 0), [pos]);
   const samplePOs = useMemo(() => pos.filter((po) => po.total_amount === 0), [pos]);
   const sortedPOs = useMemo(() => sortPOs(regularPOs, sortKey, sortDir), [regularPOs, sortKey, sortDir]);
+  const totalPages = Math.max(1, Math.ceil(sortedPOs.length / pageSize));
+  const pagedPOs = useMemo(() => sortedPOs.slice((page - 1) * pageSize, page * pageSize), [sortedPOs, page]);
   const sortedSamples = useMemo(() => sortPOs(samplePOs, sortKey, sortDir), [samplePOs, sortKey, sortDir]);
 
   if (loading && pos.length === 0) {
@@ -350,10 +355,10 @@ export function PurchaseOrdersPage() {
             </tr>
           </thead>
           <tbody>
-            {sortedPOs.length === 0 && (
+            {pagedPOs.length === 0 && (
               <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400">No open purchase orders found</td></tr>
             )}
-            {sortedPOs.map((po) => {
+            {pagedPOs.map((po) => {
               const isOpen = expanded === po.po_number;
               const pct = po.total_ordered_qty > 0
                 ? Math.round((po.total_received_qty / po.total_ordered_qty) * 100)
@@ -407,6 +412,48 @@ export function PurchaseOrdersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mb-6 -mt-4">
+          <span className="text-sm text-slate-400 dark:text-slate-500">
+            {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, sortedPOs.length)} of {sortedPOs.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(1)}
+              disabled={page === 1}
+              className="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              First
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Prev
+            </button>
+            <span className="px-2 py-1 text-xs text-slate-600 dark:text-slate-300 font-medium">
+              {page} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+            <button
+              onClick={() => setPage(totalPages)}
+              disabled={page === totalPages}
+              className="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Last
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Sample POs */}
       {samplePOs.length > 0 && (
