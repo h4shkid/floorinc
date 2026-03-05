@@ -188,6 +188,8 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                       <tr className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
                         <th className="px-3 py-1.5 text-left font-medium">PO#</th>
                         <th className="px-3 py-1.5 text-left font-medium">Vendor</th>
+                        <th className="px-3 py-1.5 text-right font-medium">Ordered</th>
+                        <th className="px-3 py-1.5 text-right font-medium">Received</th>
                         <th className="px-3 py-1.5 text-right font-medium">Remaining</th>
                         <th className="px-3 py-1.5 text-left font-medium">Expected</th>
                         <th className="px-3 py-1.5 text-center font-medium">Status</th>
@@ -198,18 +200,25 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                         <tr key={i} className="border-b border-slate-100 dark:border-slate-700/50 last:border-b-0">
                           <td className="px-3 py-1.5 text-slate-700 dark:text-slate-300 font-mono">{po.po_number}</td>
                           <td className="px-3 py-1.5 text-slate-600 dark:text-slate-400 truncate max-w-[120px]" title={po.vendor || ""}>{po.vendor || "-"}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums text-slate-600 dark:text-slate-400">{po.ordered_qty.toLocaleString()}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums text-slate-600 dark:text-slate-400">{po.received_qty.toLocaleString()}</td>
                           <td className="px-3 py-1.5 text-right tabular-nums text-blue-600 dark:text-blue-400 font-medium">{po.remaining_qty.toLocaleString()}</td>
                           <td className="px-3 py-1.5 text-slate-600 dark:text-slate-400">{po.expected_date ? fmtDate(po.expected_date) : "-"}</td>
                           <td className="px-3 py-1.5 text-center">
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                              po.status === "B" ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300" :
-                              po.status === "D" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" :
-                              po.status === "E" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" :
-                              po.status === "F" ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300" :
-                              "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
-                            }`}>
-                              {po.status === "B" ? "Pending" : po.status === "D" ? "Partial" : po.status === "E" ? "Partial" : po.status === "F" ? "Billed" : po.status}
-                            </span>
+                            {(() => {
+                              const lineStatus = po.received_qty >= po.ordered_qty ? "received"
+                                : po.received_qty > 0 ? "partial"
+                                : "pending";
+                              return (
+                                <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                  lineStatus === "received" ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300" :
+                                  lineStatus === "partial" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" :
+                                  "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+                                }`}>
+                                  {lineStatus === "received" ? "Received" : lineStatus === "partial" ? "Partial" : "Pending"}
+                                </span>
+                              );
+                            })()}
                           </td>
                         </tr>
                       ))}
