@@ -105,23 +105,15 @@ function StatCards({ pos, vendors }: { pos: POListItem[]; vendors: VendorSummary
   const totalAmount = pos.reduce((s, p) => s + p.total_amount, 0);
   const totalVendors = vendors.length;
 
-  const nextDelivery = useMemo(() => {
-    const dates = pos.map((p) => p.earliest_expected).filter(Boolean) as string[];
-    if (dates.length === 0) return null;
-    dates.sort();
-    return dates[0];
-  }, [pos]);
-
   const cards = [
     { label: "Open POs", value: totalPOs.toLocaleString(), color: "text-blue-600 dark:text-blue-400" },
     { label: "Remaining Units", value: totalRemaining.toLocaleString(), color: "text-amber-600 dark:text-amber-400" },
     { label: "On Order", value: fmtCurrency(totalAmount), color: "text-green-600 dark:text-green-400" },
     { label: "Vendors", value: totalVendors.toLocaleString(), color: "text-slate-700 dark:text-slate-300" },
-    { label: "Next Delivery", value: nextDelivery ? fmtDate(nextDelivery) : "-", color: "text-purple-600 dark:text-purple-400" },
   ];
 
   return (
-    <div className="grid grid-cols-5 gap-4 mb-6">
+    <div className="grid grid-cols-4 gap-4 mb-6">
       {cards.map((c) => (
         <div key={c.label} className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4">
           <div className={`text-2xl font-bold ${c.color}`}>{c.value}</div>
