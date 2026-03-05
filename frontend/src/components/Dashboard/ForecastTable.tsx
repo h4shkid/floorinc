@@ -200,7 +200,7 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
           <col className="w-24" />        {/* rev 90d */}
         </colgroup>
         <thead>
-          <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+          <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700" data-tour="table-header">
             {COLUMNS.map((col) => (
               <th
                 key={col.key}

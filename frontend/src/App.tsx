@@ -29,10 +29,10 @@ const TOUR_STEPS: TourStep[] = [
     placement: "bottom",
   },
   {
-    target: "[data-tour='forecast-table']",
+    target: "[data-tour='table-header']",
     title: "Forecast Table",
     content: "The main table showing all SKUs with inventory levels, sales velocity, seasonality, days remaining, and revenue. Click any column header to sort.",
-    placement: "top",
+    placement: "bottom",
   },
   {
     target: "[data-tour='urgency-badge']",
