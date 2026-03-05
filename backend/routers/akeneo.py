@@ -43,6 +43,25 @@ def trigger_preview(background_tasks: BackgroundTasks):
     return {"message": "Preview started"}
 
 
+@router.get("/product/{sku}")
+def get_akeneo_product(sku: str):
+    """Temporary debug endpoint to inspect Akeneo product data."""
+    if not is_configured():
+        return JSONResponse(status_code=400, content={"detail": "Akeneo credentials not configured"})
+    from services.akeneo_client import get_product
+    product = get_product(sku)
+    if product is None:
+        return JSONResponse(status_code=404, content={"detail": "Product not found in Akeneo"})
+    # Return just the values for promise_date and the attribute types
+    values = product.get("values", {})
+    return {
+        "identifier": product.get("identifier"),
+        "family": product.get("family"),
+        "promise_date": values.get("promise_date"),
+        "all_attribute_keys": list(values.keys()),
+    }
+
+
 @router.get("/preview/status")
 def get_preview_status():
     status = akeneo_preview_status.get()
