@@ -45,16 +45,25 @@ export function SpotlightTour({ steps, run, onFinish }: Props) {
       setRect(null);
       return;
     }
-    // Small delay to let onEnter render new elements before measuring
-    const timer = setTimeout(updateRect, 200);
+    // Poll for the target element (it may not exist yet if async-loaded)
+    let attempts = 0;
+    const maxAttempts = 20; // 20 x 200ms = 4s max wait
+    const poll = setInterval(() => {
+      attempts++;
+      const el = document.querySelector(steps[current]?.target ?? "");
+      if (el || attempts >= maxAttempts) {
+        clearInterval(poll);
+        updateRect();
+      }
+    }, 200);
     window.addEventListener("resize", updateRect);
     window.addEventListener("scroll", updateRect, true);
     return () => {
-      clearTimeout(timer);
+      clearInterval(poll);
       window.removeEventListener("resize", updateRect);
       window.removeEventListener("scroll", updateRect, true);
     };
-  }, [run, current, updateRect]);
+  }, [run, current, steps, updateRect]);
 
   useEffect(() => {
     if (!run) return;
