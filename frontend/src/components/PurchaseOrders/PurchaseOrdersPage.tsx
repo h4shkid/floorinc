@@ -15,14 +15,6 @@ function fmtDate(val: string | null): string {
   }
 }
 
-function fmtWeek(val: string): string {
-  try {
-    return new Date(val + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  } catch {
-    return val;
-  }
-}
-
 function lineStatusBadge(ordered: number, received: number): { label: string; cls: string } {
   if (received >= ordered) return { label: "Received", cls: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400" };
   if (received > 0) return { label: "Partial", cls: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400" };
@@ -195,34 +187,55 @@ function PODetail({ poNumber }: { poNumber: string }) {
   );
 }
 
-// --- Delivery Timeline ---
+// --- Delivery Timeline (monthly) ---
+interface MonthBucket { key: string; label: string; qty: number; amount: number; po_count: number }
+
+function aggregateMonthly(timeline: TimelineWeek[]): MonthBucket[] {
+  const map = new Map<string, MonthBucket>();
+  for (const t of timeline) {
+    const d = new Date(t.week + "T00:00:00");
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    const existing = map.get(key);
+    if (existing) {
+      existing.qty += t.qty;
+      existing.amount += t.amount;
+      existing.po_count += t.po_count;
+    } else {
+      map.set(key, { key, label, qty: t.qty, amount: t.amount, po_count: t.po_count });
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
+}
+
 function DeliveryTimeline({ timeline }: { timeline: TimelineWeek[] }) {
-  if (timeline.length === 0) return null;
-  const maxQty = Math.max(...timeline.map((t) => t.qty), 1);
+  const months = useMemo(() => aggregateMonthly(timeline), [timeline]);
+  if (months.length === 0) return null;
+  const maxQty = Math.max(...months.map((m) => m.qty), 1);
 
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 mb-6">
       <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Delivery Timeline</h3>
-      <div className="flex items-end gap-1" style={{ height: 100 }}>
-        {timeline.map((t) => {
-          const barPct = t.qty / maxQty;
+      <div className="flex items-end gap-2" style={{ height: 90 }}>
+        {months.map((m) => {
+          const barPct = m.qty / maxQty;
           return (
-            <div key={t.week} className="flex-1 flex flex-col items-center justify-end" style={{ height: "100%" }}>
-              {barPct > 0.25 && (
-                <span className="text-[9px] tabular-nums text-slate-500 dark:text-slate-400 mb-0.5">{t.qty.toLocaleString()}</span>
+            <div key={m.key} className="flex-1 flex flex-col items-center justify-end" style={{ height: "100%" }}>
+              {barPct > 0.15 && (
+                <span className="text-[10px] tabular-nums text-slate-500 dark:text-slate-400 mb-0.5 font-medium">{m.qty.toLocaleString()}</span>
               )}
               <div
                 className="w-full bg-blue-500 dark:bg-blue-600 rounded-t transition-all hover:bg-blue-400 dark:hover:bg-blue-500 cursor-default"
-                style={{ height: `${barPct * 100}%`, minHeight: t.qty > 0 ? 4 : 0 }}
-                title={`Week of ${fmtWeek(t.week)}\n${t.qty.toLocaleString()} units\n${fmtCurrency(t.amount)}\n${t.po_count} PO${t.po_count !== 1 ? "s" : ""}`}
+                style={{ height: `${barPct * 100}%`, minHeight: m.qty > 0 ? 4 : 0 }}
+                title={`${m.label}\n${m.qty.toLocaleString()} units\n${fmtCurrency(m.amount)}\n${m.po_count} PO${m.po_count !== 1 ? "s" : ""}`}
               />
             </div>
           );
         })}
       </div>
-      <div className="flex gap-1 mt-1.5">
-        {timeline.map((t) => (
-          <span key={t.week} className="flex-1 text-[9px] text-slate-400 dark:text-slate-500 text-center leading-tight">{fmtWeek(t.week)}</span>
+      <div className="flex gap-2 mt-1.5">
+        {months.map((m) => (
+          <span key={m.key} className="flex-1 text-[10px] text-slate-400 dark:text-slate-500 text-center font-medium">{m.label}</span>
         ))}
       </div>
     </div>
@@ -291,6 +304,9 @@ export function PurchaseOrdersPage() {
       <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">Purchase Orders</h2>
 
       <StatCards pos={pos} vendors={vendors} />
+
+      {/* Timeline */}
+      <DeliveryTimeline timeline={timeline} />
 
       {/* Filters row */}
       <div className="flex items-center gap-3 mb-4">
@@ -390,8 +406,6 @@ export function PurchaseOrdersPage() {
         </table>
       </div>
 
-      {/* Timeline */}
-      <DeliveryTimeline timeline={timeline} />
     </div>
   );
 }
