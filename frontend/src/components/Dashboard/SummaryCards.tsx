@@ -2,7 +2,7 @@ import type { ForecastSummary } from "../../types";
 
 export function SummaryCards({ summary }: { summary: ForecastSummary }) {
   return (
-    <div className="grid grid-cols-5 gap-4 mb-6">
+    <div className="grid grid-cols-5 gap-4 mb-6" data-tour="summary-cards">
       <Card label="Backorders" count={summary.backorder} color="purple" />
       <Card label="Order Now" count={summary.red} color="red" />
       <Card label="Getting Close" count={summary.yellow} color="amber" />

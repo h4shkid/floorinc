@@ -34,7 +34,7 @@ const selectClass =
 
 export function FilterBar({ params, onChange }: Props) {
   return (
-    <div className="flex flex-wrap gap-3 mb-4 items-end">
+    <div className="flex flex-wrap gap-3 mb-4 items-end" data-tour="filter-bar">
       {/* Search */}
       <div className="flex-1 min-w-48">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Search</label>

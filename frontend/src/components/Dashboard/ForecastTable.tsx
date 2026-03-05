@@ -183,7 +183,7 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
   const rowBg = (_urgency: string) => "";
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700" data-tour="forecast-table">
       <table className="w-full text-[13px] table-fixed">
         <colgroup>
           <col className="w-14" />       {/* urgency badge */}
@@ -216,19 +216,20 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
+          {items.map((item, idx) => (
             <tr
               key={item.sku}
               className={`border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-slate-700/50 ${rowBg(item.urgency)} ${onRowClick ? "cursor-pointer" : ""}`}
               onClick={() => onRowClick?.(item.sku)}
+              {...(idx === 0 ? { "data-tour": "first-row" } : {})}
             >
               {/* Urgency */}
-              <td className="px-2 py-1.5">
+              <td className="px-2 py-1.5" {...(idx === 0 ? { "data-tour": "urgency-badge" } : {})}>
                 <UrgencyBadge urgency={item.urgency} />
               </td>
 
               {/* Product — SKU + name stacked + drop ship badge */}
-              <td className="px-2 py-1.5 overflow-hidden" title={`${item.sku}\n${item.display_name}`}>
+              <td className="px-2 py-1.5 overflow-hidden" title={`${item.sku}\n${item.display_name}`} {...(idx === 0 ? { "data-tour": "product-cell" } : {})}>
                 <div className="truncate font-medium text-slate-900 dark:text-slate-100 leading-tight">
                   {item.display_name}
                 </div>
@@ -290,7 +291,7 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
               </td>
 
               {/* Lead Time — double-click to edit */}
-              <td className="px-2 py-1.5 text-right tabular-nums text-slate-500 dark:text-slate-400" onClick={(e) => e.stopPropagation()}>
+              <td className="px-2 py-1.5 text-right tabular-nums text-slate-500 dark:text-slate-400" onClick={(e) => e.stopPropagation()} {...(idx === 0 ? { "data-tour": "lead-time-cell" } : {})}>
                 <LeadTimeCell sku={item.sku} value={item.lead_time_days} onSaved={() => onLeadTimeChanged?.()} />
               </td>
 
