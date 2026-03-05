@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useMemo, type FormEvent } from "react";
 import { useForecast } from "./hooks/useForecast";
 import { SummaryCards } from "./components/Dashboard/SummaryCards";
 import { ForecastTable } from "./components/Dashboard/ForecastTable";
@@ -15,50 +15,68 @@ type Tab = "dashboard" | "import" | "guide";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
-const TOUR_STEPS: TourStep[] = [
-  {
-    target: "[data-tour='summary-cards']",
-    title: "Summary Cards",
-    content: "These cards show a quick overview of your inventory health. Backorders and Red items need immediate attention, Yellow items are getting close, and Green means you're comfortable. Counts are based on available stock (on hand minus committed).",
-    placement: "bottom",
-  },
-  {
-    target: "[data-tour='filter-bar']",
-    title: "Filters",
-    content: "Use these filters to narrow down the table. Search by SKU, product name, or manufacturer. Filter by urgency, stock type (warehoused vs drop ship), category, manufacturer, and change the velocity window.",
-    placement: "bottom",
-  },
-  {
-    target: "[data-tour='table-header']",
-    title: "Forecast Table",
-    content: "The main table showing all SKUs with available stock, sales velocity, seasonality, days remaining, and revenue. The 'Available' column shows on hand minus committed orders. Click any column header to sort.",
-    placement: "bottom",
-  },
-  {
-    target: "[data-tour='urgency-badge']",
-    title: "Urgency Badge",
-    content: "The colored badge shows urgency based on available stock: RED = order now (days left < lead time), YELLOW = getting close (days left < 1.5x lead time), GREEN = comfortable, BACKORDER = more committed than on hand.",
-    placement: "right",
-  },
-  {
-    target: "[data-tour='product-cell']",
-    title: "Product Info, Copy & Drop Ship",
-    content: "Each row shows the product name, SKU with a copy button (click to copy), and a Warehoused/Drop Ship badge. Click the badge to toggle — you'll be asked to confirm first.",
-    placement: "bottom",
-  },
-  {
-    target: "[data-tour='lead-time-cell']",
-    title: "Edit Lead Time",
-    content: "Double-click any lead time value to edit it. Type the new number of days and press Enter. This directly affects the urgency calculation.",
-    placement: "left",
-  },
-  {
-    target: "[data-tour='first-row']",
-    title: "SKU Detail",
-    content: "Click any row to open a detail panel showing available stock with physical/committed breakdown, net after receipt for out-of-stock items with POs, AI insights, purchase orders with line-level status, monthly sales, channel breakdown, and 90-day financials.",
-    placement: "bottom",
-  },
-];
+function buildTourSteps(openDetail: () => void, closeDetail: () => void): TourStep[] {
+  return [
+    {
+      target: "[data-tour='summary-cards']",
+      title: "Summary Cards",
+      content: "These cards show a quick overview of your inventory health. Backorders and Red items need immediate attention, Yellow items are getting close, and Green means you're comfortable. Counts are based on available stock (on hand minus committed).",
+      placement: "bottom",
+    },
+    {
+      target: "[data-tour='filter-bar']",
+      title: "Filters",
+      content: "Use these filters to narrow down the table. Search by SKU, product name, or manufacturer. Filter by urgency, stock type (warehoused vs drop ship), category, manufacturer, and change the velocity window.",
+      placement: "bottom",
+    },
+    {
+      target: "[data-tour='table-header']",
+      title: "Forecast Table",
+      content: "The main table showing all SKUs with available stock, sales velocity, seasonality, days remaining, and revenue. The 'Available' column shows on hand minus committed orders. Click any column header to sort.",
+      placement: "bottom",
+    },
+    {
+      target: "[data-tour='urgency-badge']",
+      title: "Urgency Badge",
+      content: "The colored badge shows urgency based on available stock: RED = order now (days left < lead time), YELLOW = getting close (days left < 1.5x lead time), GREEN = comfortable, BACKORDER = more committed than on hand.",
+      placement: "right",
+    },
+    {
+      target: "[data-tour='product-cell']",
+      title: "Product Info, Copy & Drop Ship",
+      content: "Each row shows the product name, SKU with a copy button (click to copy), and a Warehoused/Drop Ship badge. Click the badge to toggle — you'll be asked to confirm first.",
+      placement: "bottom",
+    },
+    {
+      target: "[data-tour='lead-time-cell']",
+      title: "Edit Lead Time",
+      content: "Double-click any lead time value to edit it. Type the new number of days and press Enter. This directly affects the urgency calculation.",
+      placement: "left",
+    },
+    {
+      target: "[data-tour='first-row']",
+      title: "Open SKU Detail",
+      content: "Click any row to open a detail panel on the right. Let's open one now to walk through it.",
+      placement: "bottom",
+    },
+    {
+      target: "[data-tour='detail-status-cards']",
+      title: "Stock Status",
+      content: "The status cards show urgency, available stock (on hand minus committed), and days remaining. For out-of-stock items with incoming POs, you'll also see 'Net after receipt' — how much you'll have after orders arrive.",
+      placement: "left",
+      onEnter: openDetail,
+      onLeave: closeDetail,
+    },
+    {
+      target: "[data-tour='detail-forecast']",
+      title: "Forecast Metrics",
+      content: "Velocity, seasonality, adjusted velocity, lead time, unit cost, 90-day revenue, and margin — all in one place for quick analysis.",
+      placement: "left",
+      onEnter: openDetail,
+      onLeave: closeDetail,
+    },
+  ];
+}
 
 function getInitialDark(): boolean {
   const stored = localStorage.getItem("theme");
@@ -176,6 +194,16 @@ function AuthenticatedApp() {
   const [runTour, setRunTour] = useState(false);
   const { data, loading, error, params, updateParams, toggleSort, reload } = useForecast();
 
+  const openFirstDetail = useCallback(() => {
+    if (data?.items[0]) setSelectedSku(data.items[0].sku);
+  }, [data]);
+  const closeDetail = useCallback(() => setSelectedSku(null), []);
+
+  const tourSteps = useMemo(
+    () => buildTourSteps(openFirstDetail, closeDetail),
+    [openFirstDetail, closeDetail]
+  );
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
     localStorage.setItem("theme", darkMode ? "dark" : "light");
@@ -194,11 +222,12 @@ function AuthenticatedApp() {
 
   const finishTour = useCallback(() => {
     setRunTour(false);
+    setSelectedSku(null);
   }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <SpotlightTour steps={TOUR_STEPS} run={runTour} onFinish={finishTour} />
+      <SpotlightTour steps={tourSteps} run={runTour} onFinish={finishTour} />
 
       {/* Header */}
       <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4">

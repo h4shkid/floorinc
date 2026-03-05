@@ -5,6 +5,8 @@ export interface TourStep {
   title: string;
   content: string;
   placement?: "top" | "bottom" | "left" | "right";
+  onEnter?: () => void;
+  onLeave?: () => void;
 }
 
 interface Props {
@@ -29,20 +31,30 @@ export function SpotlightTour({ steps, run, onFinish }: Props) {
     }
   }, [run, current, steps]);
 
+  // Fire onEnter/onLeave when step changes
+  useEffect(() => {
+    if (!run) return;
+    const step = steps[current];
+    step?.onEnter?.();
+    return () => { step?.onLeave?.(); };
+  }, [run, current, steps]);
+
   useEffect(() => {
     if (!run) {
       setCurrent(0);
       setRect(null);
       return;
     }
-    updateRect();
+    // Small delay to let onEnter render new elements before measuring
+    const timer = setTimeout(updateRect, 200);
     window.addEventListener("resize", updateRect);
     window.addEventListener("scroll", updateRect, true);
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("resize", updateRect);
       window.removeEventListener("scroll", updateRect, true);
     };
-  }, [run, updateRect]);
+  }, [run, current, updateRect]);
 
   useEffect(() => {
     if (!run) return;

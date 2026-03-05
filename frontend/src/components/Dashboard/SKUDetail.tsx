@@ -129,7 +129,7 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
             </div>
 
             {/* Status cards */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3" data-tour="detail-status-cards">
               <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-center">
                 <UrgencyBadge urgency={data.urgency} />
               </div>
@@ -180,7 +180,7 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
 
             {/* Incoming Purchase Orders */}
             {data.purchase_orders.length > 0 && (
-              <div>
+              <div data-tour="detail-purchase-orders">
                 <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Incoming Purchase Orders</h4>
                 <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                   <table className="w-full text-xs">
@@ -229,7 +229,7 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
             )}
 
             {/* Forecast metrics */}
-            <div>
+            <div data-tour="detail-forecast">
               <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Forecast</h4>
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 space-y-1.5 text-sm">
                 <div className="flex justify-between">
