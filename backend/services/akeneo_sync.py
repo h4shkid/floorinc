@@ -13,13 +13,19 @@ def calculate_promise_date(
 ) -> str:
     """
     Returns:
-      "" if stock available (on_hand - committed > 0)
+      "" if stock available (on_hand > 0 and on_hand covers committed)
       PO expected_date if POs cover the deficit
       "Call for availability" otherwise
     """
-    deficit = max(0, qty_committed - on_hand)
-    if deficit <= 0:
+    available = on_hand - qty_committed
+
+    # Stock covers committed — available to ship
+    if on_hand > 0 and available > 0:
         return ""
+
+    # Either no stock or committed exceeds on_hand
+    # Need at least 1 unit from POs (or all of deficit)
+    deficit = max(1, qty_committed - on_hand)
 
     # Sort POs by expected_date ascending (nulls last)
     sorted_pos = sorted(
@@ -47,20 +53,19 @@ def run_akeneo_sync():
     try:
         conn = get_connection()
 
-        # Only get SKUs with a deficit (qty_committed > on_hand)
         skus = conn.execute("""
             SELECT sku, on_hand, qty_committed
             FROM inventory
-            WHERE is_drop_ship = 0 AND qty_committed > on_hand
+            WHERE is_drop_ship = 0
         """).fetchall()
 
         total = len(skus)
         if total == 0:
-            akeneo_sync_status.complete("No SKUs with deficit found — nothing to update")
+            akeneo_sync_status.complete("No warehoused SKUs found")
             conn.close()
             return
 
-        akeneo_sync_status.update("calculating", 5, f"Processing {total} SKUs with deficit...")
+        akeneo_sync_status.update("calculating", 5, f"Processing {total} warehoused SKUs...")
 
         # Get all POs grouped by SKU
         po_rows = conn.execute("""
@@ -137,19 +142,18 @@ def run_akeneo_preview():
     try:
         conn = get_connection()
 
-        # Only get SKUs with a deficit (qty_committed > on_hand)
         skus = conn.execute("""
             SELECT sku, on_hand, qty_committed
             FROM inventory
-            WHERE is_drop_ship = 0 AND qty_committed > on_hand
+            WHERE is_drop_ship = 0
         """).fetchall()
 
         if len(skus) == 0:
-            akeneo_preview_status.complete("No SKUs with deficit found — nothing to update")
+            akeneo_preview_status.complete("No warehoused SKUs found")
             conn.close()
             return
 
-        akeneo_preview_status.update("calculating", 5, f"Found {len(skus)} SKUs with deficit...")
+        akeneo_preview_status.update("calculating", 5, f"Checking {len(skus)} warehoused SKUs...")
 
         po_rows = conn.execute("""
             SELECT sku, po_number, remaining_qty, expected_date
