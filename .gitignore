@@ -1,11 +1,13 @@
 data/raw/
+data/*.csv
 backend/forecast.db
+backend/forecast.db-shm
+backend/forecast.db-wal
 backend/__pycache__/
 backend/**/__pycache__/
+backend/.vite/
 frontend/node_modules/
 frontend/dist/
 .DS_Store
 *.pyc
-backend/.vite/
-backend/forecast.db-shm
-backend/forecast.db-wal
+render-env.md
