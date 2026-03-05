@@ -15,7 +15,7 @@ type Tab = "dashboard" | "import" | "guide";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
-function buildTourSteps(openDetail: () => void, closeDetail: () => void): TourStep[] {
+function buildTourSteps(): TourStep[] {
   return [
     {
       target: "[data-tour='summary-cards']",
@@ -178,15 +178,7 @@ function AuthenticatedApp() {
   const [runTour, setRunTour] = useState(false);
   const { data, loading, error, params, updateParams, toggleSort, reload } = useForecast();
 
-  const openFirstDetail = useCallback(() => {
-    if (data?.items[0]) setSelectedSku(data.items[0].sku);
-  }, [data]);
-  const closeDetail = useCallback(() => setSelectedSku(null), []);
-
-  const tourSteps = useMemo(
-    () => buildTourSteps(openFirstDetail, closeDetail),
-    [openFirstDetail, closeDetail]
-  );
+  const tourSteps = useMemo(() => buildTourSteps(), []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
