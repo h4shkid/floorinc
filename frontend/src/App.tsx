@@ -56,23 +56,21 @@ function buildTourSteps(openDetail: () => void, closeDetail: () => void): TourSt
     {
       target: "[data-tour='first-row']",
       title: "Open SKU Detail",
-      content: "Click any row to open a detail panel on the right. Let's open one now to walk through it.",
+      content: "Click any row to open a detail panel on the right. We're opening one now so you can see it on the next step.",
       placement: "bottom",
+      onEnter: openDetail,
     },
     {
       target: "[data-tour='detail-status-cards']",
       title: "Stock Status",
       content: "The status cards show urgency, available stock (on hand minus committed), and days remaining. For out-of-stock items with incoming POs, you'll also see 'Net after receipt' — how much you'll have after orders arrive.",
       placement: "left",
-      onEnter: openDetail,
-      onLeave: closeDetail,
     },
     {
       target: "[data-tour='detail-forecast']",
       title: "Forecast Metrics",
       content: "Velocity, seasonality, adjusted velocity, lead time, unit cost, 90-day revenue, and margin — all in one place for quick analysis.",
       placement: "left",
-      onEnter: openDetail,
       onLeave: closeDetail,
     },
   ];
