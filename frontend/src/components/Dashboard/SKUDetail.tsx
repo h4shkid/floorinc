@@ -88,7 +88,7 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
       className="fixed inset-0 z-50 bg-black/20 flex justify-end"
       onClick={handleBackdropClick}
     >
-      <div className="w-full max-w-lg bg-white dark:bg-slate-800 shadow-2xl h-full overflow-y-auto animate-slide-in-right">
+      <div className="w-full max-w-2xl bg-white dark:bg-slate-800 shadow-2xl h-full overflow-y-auto animate-slide-in-right">
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-5 py-4 flex items-center justify-between z-10">
           <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">SKU Detail</h2>
