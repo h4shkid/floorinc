@@ -115,6 +115,8 @@ function DropShipBadge({ sku, isDropShip, onChanged }: { sku: string; isDropShip
 
   async function toggle(e: React.MouseEvent) {
     e.stopPropagation();
+    const newLabel = isDropShip ? "Warehoused" : "Drop Ship";
+    if (!window.confirm(`Change ${sku} to "${newLabel}"?`)) return;
     setSaving(true);
     try {
       await updateDropShip(sku, !isDropShip);
@@ -137,6 +139,36 @@ function DropShipBadge({ sku, isDropShip, onChanged }: { sku: string; isDropShip
       }`}
     >
       {isDropShip ? "Drop Ship" : "Warehoused"}
+    </button>
+  );
+}
+
+function CopySku({ sku }: { sku: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy(e: React.MouseEvent) {
+    e.stopPropagation();
+    navigator.clipboard.writeText(sku);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      title="Copy SKU"
+      className="shrink-0 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+    >
+      {copied ? (
+        <svg className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+        </svg>
+      )}
     </button>
   );
 }
@@ -204,6 +236,7 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
                   <span className="truncate text-[11px] text-slate-400 dark:text-slate-500 font-mono">
                     {item.sku}
                   </span>
+                  <CopySku sku={item.sku} />
                   <DropShipBadge sku={item.sku} isDropShip={item.is_drop_ship === 1} onChanged={() => onLeadTimeChanged?.()} />
                 </div>
               </td>
