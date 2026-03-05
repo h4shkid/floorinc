@@ -9,7 +9,7 @@ function fmtCurrency(val: number): string {
 function fmtDate(val: string | null): string {
   if (!val) return "-";
   try {
-    return new Date(val + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return new Date(val + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   } catch {
     return val;
   }
@@ -29,17 +29,17 @@ function lineStatusBadge(ordered: number, received: number): { label: string; cl
   return { label: "Pending", cls: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400" };
 }
 
-type SortKey = "po_number" | "vendor" | "remaining" | "amount" | "expected" | "progress";
+type SortKey = "po_number" | "vendor" | "items" | "remaining" | "amount" | "expected" | "progress";
 type SortDir = "asc" | "desc";
 
-function SortHeader({ label, sortKey, current, dir, onSort, align = "left" }: {
-  label: ReactNode; sortKey: SortKey; current: SortKey; dir: SortDir; onSort: (k: SortKey) => void; align?: "left" | "right";
+function SortHeader({ label, sortKey, current, dir, onSort, align = "left", className = "" }: {
+  label: ReactNode; sortKey: SortKey; current: SortKey; dir: SortDir; onSort: (k: SortKey) => void; align?: "left" | "right"; className?: string;
 }) {
   const active = current === sortKey;
   return (
     <th
       onClick={() => onSort(sortKey)}
-      className={`font-medium px-2 py-3 cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200 transition-colors ${align === "right" ? "text-right" : "text-left"}`}
+      className={`font-medium px-3 py-3 cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200 transition-colors ${align === "right" ? "text-right" : "text-left"} ${className}`}
     >
       <span className="inline-flex items-center gap-1">
         {label}
@@ -66,15 +66,28 @@ function sortPOs(pos: POListItem[], key: SortKey, dir: SortDir): POListItem[] {
     switch (key) {
       case "po_number": cmp = a.po_number.localeCompare(b.po_number); break;
       case "vendor": cmp = (a.vendor || "").localeCompare(b.vendor || ""); break;
+      case "items": cmp = a.total_lines - b.total_lines; break;
       case "remaining": cmp = a.total_remaining_qty - b.total_remaining_qty; break;
       case "amount": cmp = a.total_amount - b.total_amount; break;
-      case "expected": cmp = (a.earliest_expected || "9999").localeCompare(b.earliest_expected || "9999"); break;
+      case "expected": {
+        const aVal = a.earliest_expected || "";
+        const bVal = b.earliest_expected || "";
+        if (!aVal && !bVal) cmp = 0;
+        else if (!aVal) cmp = 1;
+        else if (!bVal) cmp = -1;
+        else cmp = aVal.localeCompare(bVal);
+        break;
+      }
       case "progress": {
         const pctA = a.total_ordered_qty > 0 ? a.total_received_qty / a.total_ordered_qty : 0;
         const pctB = b.total_ordered_qty > 0 ? b.total_received_qty / b.total_ordered_qty : 0;
         cmp = pctA - pctB;
         break;
       }
+    }
+    // For "expected", nulls always sort last regardless of direction
+    if (key === "expected" && ((!a.earliest_expected && b.earliest_expected) || (a.earliest_expected && !b.earliest_expected))) {
+      return cmp;
     }
     return dir === "asc" ? cmp : -cmp;
   });
@@ -87,18 +100,26 @@ function StatCards({ pos, vendors }: { pos: POListItem[]; vendors: VendorSummary
   const totalAmount = pos.reduce((s, p) => s + p.total_amount, 0);
   const totalVendors = vendors.length;
 
+  const nextDelivery = useMemo(() => {
+    const dates = pos.map((p) => p.earliest_expected).filter(Boolean) as string[];
+    if (dates.length === 0) return null;
+    dates.sort();
+    return dates[0];
+  }, [pos]);
+
   const cards = [
     { label: "Open POs", value: totalPOs.toLocaleString(), color: "text-blue-600 dark:text-blue-400" },
     { label: "Remaining Units", value: totalRemaining.toLocaleString(), color: "text-amber-600 dark:text-amber-400" },
     { label: "On Order", value: fmtCurrency(totalAmount), color: "text-green-600 dark:text-green-400" },
     { label: "Vendors", value: totalVendors.toLocaleString(), color: "text-slate-700 dark:text-slate-300" },
+    { label: "Next Delivery", value: nextDelivery ? fmtDate(nextDelivery) : "-", color: "text-purple-600 dark:text-purple-400" },
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-5 gap-4 mb-6">
       {cards.map((c) => (
         <div key={c.label} className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <div className={`text-3xl font-bold ${c.color}`}>{c.value}</div>
+          <div className={`text-2xl font-bold ${c.color}`}>{c.value}</div>
           <div className="text-sm font-medium mt-1 text-slate-500 dark:text-slate-400">{c.label}</div>
         </div>
       ))}
@@ -125,34 +146,51 @@ function PODetail({ poNumber }: { poNumber: string }) {
   }
 
   return (
-    <div className="px-6 py-3 space-y-1">
-      {lines.map((line, i) => {
-        const badge = lineStatusBadge(line.ordered_qty, line.received_qty);
-        const pct = line.ordered_qty > 0 ? Math.round((line.received_qty / line.ordered_qty) * 100) : 0;
-        return (
-          <div key={i} className="flex items-center gap-3 py-1.5 text-sm">
-            <span className="font-mono text-xs text-slate-500 dark:text-slate-400 w-32 shrink-0 truncate" title={line.sku}>{line.sku}</span>
-            <span className="text-slate-700 dark:text-slate-300 flex-1 truncate" title={line.display_name || ""}>{line.display_name || line.sku}</span>
-            <div className="w-24 shrink-0">
-              <div className="flex items-center gap-1.5">
-                <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
-                  <div
-                    className={`h-1.5 rounded-full ${pct >= 100 ? "bg-green-500" : pct > 0 ? "bg-yellow-500" : "bg-slate-300 dark:bg-slate-600"}`}
-                    style={{ width: `${Math.min(pct, 100)}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-slate-400 tabular-nums w-7 text-right">{pct}%</span>
-              </div>
-            </div>
-            <span className="tabular-nums text-xs text-slate-600 dark:text-slate-400 w-20 text-right shrink-0">
-              {line.remaining_qty.toLocaleString()} left
-            </span>
-            <span className="tabular-nums text-xs text-slate-500 dark:text-slate-400 w-16 text-right shrink-0">{fmtCurrency(line.amount)}</span>
-            <span className="text-xs text-slate-400 w-16 text-right shrink-0">{fmtDate(line.expected_date)}</span>
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full w-14 text-center shrink-0 ${badge.cls}`}>{badge.label}</span>
-          </div>
-        );
-      })}
+    <div className="border-l-2 border-blue-400 bg-slate-50 dark:bg-slate-900/50">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            <th className="px-4 py-2 text-left font-medium w-36">SKU</th>
+            <th className="px-3 py-2 text-left font-medium">Product</th>
+            <th className="px-3 py-2 text-right font-medium w-28">Fulfillment</th>
+            <th className="px-3 py-2 text-right font-medium w-24">Remaining</th>
+            <th className="px-3 py-2 text-right font-medium w-20">Amount</th>
+            <th className="px-3 py-2 text-left font-medium w-28">Expected</th>
+            <th className="px-3 py-2 text-center font-medium w-20">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lines.map((line, i) => {
+            const badge = lineStatusBadge(line.ordered_qty, line.received_qty);
+            const pct = line.ordered_qty > 0 ? Math.round((line.received_qty / line.ordered_qty) * 100) : 0;
+            return (
+              <tr key={i} className="border-t border-slate-200/60 dark:border-slate-700/40">
+                <td className="px-4 py-2 font-mono text-xs text-slate-500 dark:text-slate-400 truncate" title={line.sku}>{line.sku}</td>
+                <td className="px-3 py-2 text-slate-700 dark:text-slate-300 truncate max-w-0" title={line.display_name || ""}>{line.display_name || line.sku}</td>
+                <td className="px-3 py-2 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                      {line.received_qty.toLocaleString()} of {line.ordered_qty.toLocaleString()}
+                    </span>
+                    <div className="w-10 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full ${pct >= 100 ? "bg-green-500" : pct > 0 ? "bg-yellow-500" : "bg-slate-300 dark:bg-slate-600"}`}
+                        style={{ width: `${Math.min(pct, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums font-medium text-slate-800 dark:text-slate-200">{line.remaining_qty.toLocaleString()}</td>
+                <td className="px-3 py-2 text-right tabular-nums text-slate-600 dark:text-slate-400">{fmtCurrency(line.amount)}</td>
+                <td className="px-3 py-2 text-slate-600 dark:text-slate-400 text-xs">{fmtDate(line.expected_date)}</td>
+                <td className="px-3 py-2 text-center">
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${badge.cls}`}>{badge.label}</span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -166,14 +204,21 @@ function DeliveryTimeline({ timeline }: { timeline: TimelineWeek[] }) {
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
       <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Delivery Timeline</h3>
       <div className="flex items-end gap-1" style={{ height: 100 }}>
-        {timeline.map((t) => (
-          <div
-            key={t.week}
-            className="flex-1 bg-blue-500 dark:bg-blue-600 rounded-t transition-all hover:bg-blue-400 dark:hover:bg-blue-500 cursor-default"
-            style={{ height: `${(t.qty / maxQty) * 100}%`, minHeight: t.qty > 0 ? 4 : 0 }}
-            title={`Week of ${fmtWeek(t.week)}\n${t.qty.toLocaleString()} units\n${fmtCurrency(t.amount)}\n${t.po_count} PO${t.po_count !== 1 ? "s" : ""}`}
-          />
-        ))}
+        {timeline.map((t) => {
+          const barPct = t.qty / maxQty;
+          return (
+            <div key={t.week} className="flex-1 flex flex-col items-center justify-end" style={{ height: "100%" }}>
+              {barPct > 0.25 && (
+                <span className="text-[9px] tabular-nums text-slate-500 dark:text-slate-400 mb-0.5">{t.qty.toLocaleString()}</span>
+              )}
+              <div
+                className="w-full bg-blue-500 dark:bg-blue-600 rounded-t transition-all hover:bg-blue-400 dark:hover:bg-blue-500 cursor-default"
+                style={{ height: `${barPct * 100}%`, minHeight: t.qty > 0 ? 4 : 0 }}
+                title={`Week of ${fmtWeek(t.week)}\n${t.qty.toLocaleString()} units\n${fmtCurrency(t.amount)}\n${t.po_count} PO${t.po_count !== 1 ? "s" : ""}`}
+              />
+            </div>
+          );
+        })}
       </div>
       <div className="flex gap-1 mt-1.5">
         {timeline.map((t) => (
@@ -225,7 +270,7 @@ export function PurchaseOrdersPage() {
         setSortDir((d) => (d === "asc" ? "desc" : "asc"));
         return key;
       }
-      setSortDir(key === "remaining" || key === "amount" ? "desc" : "asc");
+      setSortDir(key === "remaining" || key === "amount" || key === "items" ? "desc" : "asc");
       return key;
     });
   }, []);
@@ -273,21 +318,22 @@ export function PurchaseOrdersPage() {
 
       {/* PO Table */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden mb-6">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm table-fixed">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              <th className="px-4 py-3 w-8"></th>
-              <SortHeader label="PO #" sortKey="po_number" current={sortKey} dir={sortDir} onSort={toggleSort} />
+              <th className="w-10 px-2 py-3"></th>
+              <SortHeader label="PO #" sortKey="po_number" current={sortKey} dir={sortDir} onSort={toggleSort} className="w-28" />
               <SortHeader label="Vendor" sortKey="vendor" current={sortKey} dir={sortDir} onSort={toggleSort} />
-              <SortHeader label="Remaining" sortKey="remaining" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" />
-              <SortHeader label="Amount" sortKey="amount" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" />
-              <SortHeader label="Expected" sortKey="expected" current={sortKey} dir={sortDir} onSort={toggleSort} />
-              <SortHeader label="Progress" sortKey="progress" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" />
+              <SortHeader label="Items" sortKey="items" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="w-16" />
+              <SortHeader label="Remaining" sortKey="remaining" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="w-24" />
+              <SortHeader label="Amount" sortKey="amount" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="w-24" />
+              <SortHeader label="Expected" sortKey="expected" current={sortKey} dir={sortDir} onSort={toggleSort} className="w-28" />
+              <SortHeader label="Progress" sortKey="progress" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="w-28" />
             </tr>
           </thead>
           <tbody>
             {sortedPOs.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">No open purchase orders found</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400">No open purchase orders found</td></tr>
             )}
             {sortedPOs.map((po) => {
               const isOpen = expanded === po.po_number;
@@ -300,25 +346,25 @@ export function PurchaseOrdersPage() {
                     onClick={() => setExpanded(isOpen ? null : po.po_number)}
                     className={`cursor-pointer border-t border-slate-100 dark:border-slate-700/50 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/30 ${isOpen ? "bg-blue-50/50 dark:bg-blue-950/20" : ""}`}
                   >
-                    <td className="px-4 py-3 text-slate-400">
-                      <svg className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="currentColor" viewBox="0 0 20 20">
+                    <td className="px-2 py-2.5 text-center text-slate-400">
+                      <svg className={`w-3.5 h-3.5 inline-block transition-transform ${isOpen ? "rotate-90" : ""}`} fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
                       </svg>
                     </td>
-                    <td className="px-2 py-3">
-                      <div className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{po.po_number}</div>
-                      <div className="text-[11px] text-slate-400 dark:text-slate-500">{fmtDate(po.po_date)} &middot; {po.total_lines} items</div>
+                    <td className="px-3 py-2.5">
+                      <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{po.po_number}</span>
                     </td>
-                    <td className="px-2 py-3 text-slate-700 dark:text-slate-300 truncate max-w-[200px]" title={po.vendor || ""}>{po.vendor || "-"}</td>
-                    <td className="px-2 py-3 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-100">{po.total_remaining_qty.toLocaleString()}</td>
-                    <td className="px-2 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">{fmtCurrency(po.total_amount)}</td>
-                    <td className="px-2 py-3 text-slate-600 dark:text-slate-400">
+                    <td className="px-3 py-2.5 text-slate-700 dark:text-slate-300 truncate" title={po.vendor || ""}>{po.vendor || "-"}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-500 dark:text-slate-400">{po.total_lines}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-100">{po.total_remaining_qty.toLocaleString()}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-700 dark:text-slate-300">{fmtCurrency(po.total_amount)}</td>
+                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400 text-xs">
                       {po.earliest_expected ? fmtDate(po.earliest_expected) : "-"}
                       {po.latest_expected && po.latest_expected !== po.earliest_expected && (
-                        <span className="text-slate-400 dark:text-slate-500"> - {fmtDate(po.latest_expected)}</span>
+                        <span className="text-slate-400 dark:text-slate-500 block text-[10px]">to {fmtDate(po.latest_expected)}</span>
                       )}
                     </td>
-                    <td className="px-2 py-3">
+                    <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2 justify-end">
                         <div className="w-16 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
                           <div
@@ -332,7 +378,7 @@ export function PurchaseOrdersPage() {
                   </tr>
                   {isOpen && (
                     <tr>
-                      <td colSpan={7} className="p-0 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700/50">
+                      <td colSpan={8} className="p-0">
                         <PODetail poNumber={po.po_number} />
                       </td>
                     </tr>
