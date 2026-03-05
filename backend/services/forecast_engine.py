@@ -74,10 +74,11 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
     df["is_warehoused"] = df["is_warehoused"].fillna(0).astype(int)
     df["source_type"] = df["source_type"].fillna("")
 
-    # 5. Adjusted velocity & days remaining
+    # 5. Available qty (on_hand minus committed), adjusted velocity & days remaining
+    df["available_qty"] = df["on_hand"] - df["qty_committed"]
     df["adjusted_velocity"] = df["velocity"] * df["seasonality_factor"]
     df["days_remaining"] = df.apply(
-        lambda r: (r["on_hand"] / r["adjusted_velocity"]) if r["adjusted_velocity"] > 0 else None,
+        lambda r: (r["available_qty"] / r["adjusted_velocity"]) if r["adjusted_velocity"] > 0 else None,
         axis=1,
     )
 
@@ -86,8 +87,8 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
 
     # 6. Urgency classification
     def classify(row):
-        # Negative on_hand = backorder → separate category
-        if row["on_hand"] < 0:
+        # Negative available qty = backorder → separate category
+        if row["available_qty"] < 0:
             return "BACKORDER"
         # Zero velocity with stock → GREEN (no sales, no urgency)
         if row["adjusted_velocity"] == 0:
@@ -113,7 +114,7 @@ def build_forecast(velocity_window: int = 90, active_only: bool = True) -> pd.Da
     def priority(row):
         base = _safe_dr(row["days_remaining"])
         if row["urgency"] == "BACKORDER":
-            return -1000 + row["on_hand"]  # More negative = higher priority
+            return -1000 + row["available_qty"]  # More negative = higher priority
         if row["urgency"] == "RED":
             return base
         if row["urgency"] == "YELLOW":

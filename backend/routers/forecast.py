@@ -154,6 +154,7 @@ def get_dashboard(
             sku=r["sku"],
             display_name=r["display_name"],
             on_hand=int(r["on_hand"]),
+            available_qty=int(r["available_qty"]),
             velocity=_safe_float(r["velocity"], 3) or 0.0,
             seasonality_factor=_safe_float(r["seasonality_factor"], 2) or 1.0,
             adjusted_velocity=_safe_float(r["adjusted_velocity"], 3) or 0.0,
@@ -321,10 +322,13 @@ def get_sku_detail(sku: str):
     total_cost = round(item_cost * qty_sold_90d, 2) if item_cost > 0 else 0.0
     margin = round((total_revenue - total_cost) / total_revenue * 100, 1) if total_revenue > 0 and total_cost > 0 else None
 
+    available_qty = int(r["available_qty"])
+
     return SKUDetailResponse(
         sku=r["sku"],
         display_name=r["display_name"],
         on_hand=int(r["on_hand"]),
+        available_qty=available_qty,
         urgency=r["urgency"],
         lead_time_days=int(r["lead_time_days"]),
         velocity=_safe_float(r["velocity"], 3) or 0.0,
@@ -337,6 +341,7 @@ def get_sku_detail(sku: str):
         qty_on_order=int(r.get("qty_on_order", 0)),
         qty_committed=int(r.get("qty_committed", 0)),
         incoming_qty=incoming_qty,
+        net_after_receipt=available_qty + incoming_qty,
         monthly_sales=monthly_sales,
         channel_breakdown=channel_breakdown,
         recent_orders=recent_orders,

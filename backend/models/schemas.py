@@ -18,6 +18,7 @@ class ForecastItem(BaseModel):
     sku: str
     display_name: str
     on_hand: int
+    available_qty: int
     velocity: float
     seasonality_factor: float
     adjusted_velocity: float
@@ -107,6 +108,7 @@ class SKUDetailResponse(BaseModel):
     sku: str
     display_name: str
     on_hand: int
+    available_qty: int
     urgency: str
     lead_time_days: int
     velocity: float
@@ -119,6 +121,7 @@ class SKUDetailResponse(BaseModel):
     qty_on_order: int = 0
     qty_committed: int = 0
     incoming_qty: int = 0
+    net_after_receipt: int = 0
     monthly_sales: list[MonthlySales]
     channel_breakdown: list[ChannelBreakdown]
     recent_orders: list[RecentOrder]

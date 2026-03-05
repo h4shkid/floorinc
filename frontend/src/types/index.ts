@@ -2,6 +2,7 @@ export interface ForecastItem {
   sku: string;
   display_name: string;
   on_hand: number;
+  available_qty: number;
   velocity: number;
   seasonality_factor: number;
   adjusted_velocity: number;
@@ -125,6 +126,7 @@ export interface SKUDetail {
   sku: string;
   display_name: string;
   on_hand: number;
+  available_qty: number;
   urgency: "BACKORDER" | "RED" | "YELLOW" | "GREEN";
   lead_time_days: number;
   velocity: number;
@@ -137,6 +139,7 @@ export interface SKUDetail {
   qty_on_order: number;
   qty_committed: number;
   incoming_qty: number;
+  net_after_receipt: number;
   monthly_sales: MonthlySales[];
   channel_breakdown: ChannelBreakdown[];
   recent_orders: RecentOrder[];

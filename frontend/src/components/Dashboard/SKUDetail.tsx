@@ -134,15 +134,15 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                 <UrgencyBadge urgency={data.urgency} />
               </div>
               <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-center">
-                <div className={`text-lg font-bold tabular-nums ${data.on_hand < 0 ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-slate-100"}`}>
-                  {data.on_hand.toLocaleString()}
+                <div className={`text-lg font-bold tabular-nums ${data.available_qty < 0 ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-slate-100"}`}>
+                  {data.available_qty.toLocaleString()}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">on hand</div>
-                {data.incoming_qty > 0 && (
-                  <div className="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5">+{data.incoming_qty.toLocaleString()} incoming</div>
-                )}
-                {data.qty_committed > 0 && (
-                  <div className="text-[11px] text-orange-600 dark:text-orange-400 mt-0.5">{data.qty_committed.toLocaleString()} committed</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">available</div>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                  {data.on_hand.toLocaleString()} physical &minus; {data.qty_committed.toLocaleString()} committed
+                </div>
+                {data.incoming_qty > 0 && data.available_qty <= 0 && (
+                  <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-1">Net after receipt: {data.net_after_receipt.toLocaleString()} units</div>
                 )}
               </div>
               <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-center">

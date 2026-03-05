@@ -35,7 +35,7 @@ function getColumns(window: number) {
     { key: "display_name", label: "Product", tooltip: "Product name and SKU", align: "left" },
     { key: "manufacturer", label: "Manufacturer", tooltip: "Manufacturer — Preferred vendor/manufacturer for this product", align: "left" },
     { key: "top_channel", label: "Ch", tooltip: "Channel — Top sales channel for this SKU (FI = FlooringInc website, AVC = Amazon Vendor Central, ASC = Amazon Seller Central, HD = Home Depot, WF = Wayfair, WM = Walmart)", align: "center" },
-    { key: "on_hand", label: "On Hand", tooltip: "On Hand — Current inventory units in Tennessee warehouse. Negative = backorder (orders received but no stock to fulfill)", align: "right" },
+    { key: "available_qty", label: "Available", tooltip: "Available — On Hand minus committed orders. Negative = backorder (more committed than in stock)", align: "right" },
     { key: "velocity", label: "Vel/d", tooltip: `Velocity per Day — Average units sold per day over the last ${window} days`, align: "right" },
     { key: "seasonality_factor", label: "Szn", tooltip: "Seasonality Factor — Year-over-year demand multiplier. >1.0x = demand increasing vs last year, <1.0x = demand decreasing", align: "right" },
     { key: "adjusted_velocity", label: "Adj Vel", tooltip: "Adjusted Velocity — Velocity x Seasonality factor. This is the forecasted daily demand used for calculations", align: "right" },
@@ -256,9 +256,9 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
                 </span>
               </td>
 
-              {/* On Hand */}
-              <td className={`px-2 py-1.5 text-right tabular-nums ${item.on_hand < 0 ? "text-red-600 dark:text-red-400 font-bold" : "text-slate-700 dark:text-slate-300"}`}>
-                {item.on_hand.toLocaleString()}
+              {/* Available */}
+              <td className={`px-2 py-1.5 text-right tabular-nums ${item.available_qty < 0 ? "text-red-600 dark:text-red-400 font-bold" : "text-slate-700 dark:text-slate-300"}`}>
+                {item.available_qty.toLocaleString()}
                 {item.incoming_qty > 0 && (
                   <div className="text-[10px] text-blue-600 dark:text-blue-400 font-normal">+{item.incoming_qty.toLocaleString()} incoming</div>
                 )}
