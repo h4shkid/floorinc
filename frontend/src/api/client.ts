@@ -81,3 +81,11 @@ export async function updateDropShip(sku: string, isDropShip: boolean): Promise<
 export async function fetchDataStats(): Promise<DataStats> {
   return fetchJSON<DataStats>(`${BASE}/forecast/data-stats`);
 }
+
+export async function fetchAkeneoStatus(): Promise<SyncStatus> {
+  return fetchJSON<SyncStatus>(`${BASE}/akeneo/status`);
+}
+
+export async function triggerAkeneoSync(): Promise<{ message: string }> {
+  return fetchJSON<{ message: string }>(`${BASE}/akeneo/sync`, { method: "POST" });
+}
