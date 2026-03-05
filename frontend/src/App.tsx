@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, type FormEvent } from "react";
-import Joyride, { type Step, type CallBackProps, STATUS } from "react-joyride";
 import { useForecast } from "./hooks/useForecast";
 import { SummaryCards } from "./components/Dashboard/SummaryCards";
 import { ForecastTable } from "./components/Dashboard/ForecastTable";
@@ -8,6 +7,7 @@ import { FilterBar } from "./components/Filters/FilterBar";
 import { Pagination } from "./components/Filters/Pagination";
 import { ImportPage } from "./components/Import/ImportPage";
 import { GuidePage } from "./components/Guide/GuidePage";
+import { SpotlightTour, type TourStep } from "./components/Guide/SpotlightTour";
 import { fetchDataStats, fetchSyncStatus } from "./api/client";
 import type { DataStats, SyncStatus } from "./types";
 
@@ -15,48 +15,47 @@ type Tab = "dashboard" | "import" | "guide";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
-const TOUR_STEPS: Step[] = [
+const TOUR_STEPS: TourStep[] = [
   {
     target: "[data-tour='summary-cards']",
     title: "Summary Cards",
     content: "These cards show a quick overview of your inventory health. Backorders and Red items need immediate attention, Yellow items are getting close, and Green means you're comfortable.",
     placement: "bottom",
-    disableBeacon: true,
   },
   {
     target: "[data-tour='filter-bar']",
     title: "Filters",
-    content: "Use these filters to narrow down the table. You can search by SKU or product name, filter by urgency level, stock type (warehoused vs drop ship), category, manufacturer, and change the velocity calculation window.",
+    content: "Use these filters to narrow down the table. Search by SKU or product name, filter by urgency, stock type (warehoused vs drop ship), category, manufacturer, and change the velocity window.",
     placement: "bottom",
   },
   {
     target: "[data-tour='forecast-table']",
     title: "Forecast Table",
-    content: "This is the main table showing all your SKUs. Click any column header to sort. Each row shows inventory levels, sales velocity, seasonality, days of stock remaining, and revenue data.",
+    content: "The main table showing all SKUs with inventory levels, sales velocity, seasonality, days remaining, and revenue. Click any column header to sort.",
     placement: "top",
   },
   {
     target: "[data-tour='urgency-badge']",
     title: "Urgency Badge",
-    content: "The colored badge indicates urgency: RED means order now (stock will run out before lead time), YELLOW means getting close, GREEN means comfortable stock levels, and BACKORDER means you're already out.",
+    content: "The colored badge shows urgency: RED = order now, YELLOW = getting close, GREEN = comfortable, BACKORDER = already out of stock.",
     placement: "right",
   },
   {
     target: "[data-tour='product-cell']",
     title: "Product Info, Copy & Drop Ship",
-    content: "Each product shows its name, SKU, a copy button (click to copy SKU to clipboard), and a Warehoused/Drop Ship badge. Click the badge to toggle — a confirmation will appear first to prevent accidental changes.",
+    content: "Each row shows the product name, SKU with a copy button (click to copy), and a Warehoused/Drop Ship badge. Click the badge to toggle — you'll be asked to confirm first.",
     placement: "bottom",
   },
   {
     target: "[data-tour='lead-time-cell']",
     title: "Edit Lead Time",
-    content: "Double-click any lead time value to edit it inline. Type the new number of days and press Enter to save. This directly affects the urgency calculation for that SKU.",
+    content: "Double-click any lead time value to edit it. Type the new number of days and press Enter. This directly affects the urgency calculation.",
     placement: "left",
   },
   {
     target: "[data-tour='first-row']",
     title: "SKU Detail",
-    content: "Click any row to open a detailed view on the right side. You'll see monthly sales charts, channel breakdown, recent orders, open purchase orders, and 90-day financials with margin.",
+    content: "Click any row to open a detail panel with monthly sales charts, channel breakdown, recent orders, purchase orders, and 90-day financials.",
     placement: "bottom",
   },
 ];
@@ -190,68 +189,16 @@ function AuthenticatedApp() {
   const startTour = useCallback(() => {
     setSelectedSku(null);
     setTab("dashboard");
-    // Small delay so dashboard renders before Joyride targets elements
-    setTimeout(() => setRunTour(true), 300);
+    setTimeout(() => setRunTour(true), 500);
   }, []);
 
-  const handleTourCallback = useCallback((data: CallBackProps) => {
-    const { status } = data;
-    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-      setRunTour(false);
-    }
+  const finishTour = useCallback(() => {
+    setRunTour(false);
   }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <Joyride
-        steps={TOUR_STEPS}
-        run={runTour}
-        continuous
-        showProgress
-        showSkipButton
-        scrollToFirstStep
-        callback={handleTourCallback}
-        styles={{
-          options: {
-            primaryColor: "#2563eb",
-            zIndex: 10000,
-            textColor: "#1e293b",
-            backgroundColor: "#ffffff",
-          },
-          tooltip: {
-            borderRadius: 12,
-            padding: 20,
-          },
-          tooltipTitle: {
-            fontSize: 16,
-            fontWeight: 600,
-          },
-          tooltipContent: {
-            fontSize: 14,
-            lineHeight: 1.6,
-          },
-          buttonNext: {
-            borderRadius: 8,
-            padding: "8px 16px",
-            fontSize: 14,
-          },
-          buttonBack: {
-            color: "#64748b",
-            fontSize: 14,
-          },
-          buttonSkip: {
-            color: "#94a3b8",
-            fontSize: 13,
-          },
-        }}
-        locale={{
-          back: "Back",
-          close: "Close",
-          last: "Finish",
-          next: "Next",
-          skip: "Skip tour",
-        }}
-      />
+      <SpotlightTour steps={TOUR_STEPS} run={runTour} onFinish={finishTour} />
 
       {/* Header */}
       <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4">
