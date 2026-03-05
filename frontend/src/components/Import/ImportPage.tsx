@@ -183,7 +183,15 @@ function PreviewModal({
           {results.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-8">No changes to make — all values are up to date.</p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col className="w-[22%]" />
+                <col className="w-[10%]" />
+                <col className="w-[12%]" />
+                <col className="w-[18%]" />
+                <col className="w-[18%]" />
+                <col className="w-[20%]" />
+              </colgroup>
               <thead className="sticky top-0 bg-white dark:bg-slate-800">
                 <tr className="border-b border-slate-200 dark:border-slate-700 text-left">
                   <th className="pb-2 px-3 font-medium text-slate-600 dark:text-slate-400">SKU</th>
