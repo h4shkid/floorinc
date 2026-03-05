@@ -252,6 +252,7 @@ export function PurchaseOrdersPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("expected");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [showSamples, setShowSamples] = useState(false);
 
   useEffect(() => {
     const id = setTimeout(() => setSearchDebounced(search), 300);
@@ -265,7 +266,7 @@ export function PurchaseOrdersPage() {
       fetchVendorSummary(),
       fetchPOTimeline(),
     ]).then(([poData, vendorData, timelineData]) => {
-      setPOs(poData.filter((po) => po.total_amount > 0));
+      setPOs(poData);
       setVendors(vendorData);
       setTimeline(timelineData);
     }).catch(() => {}).finally(() => setLoading(false));
@@ -286,7 +287,10 @@ export function PurchaseOrdersPage() {
     });
   }, []);
 
-  const sortedPOs = useMemo(() => sortPOs(pos, sortKey, sortDir), [pos, sortKey, sortDir]);
+  const regularPOs = useMemo(() => pos.filter((po) => po.total_amount > 0), [pos]);
+  const samplePOs = useMemo(() => pos.filter((po) => po.total_amount === 0), [pos]);
+  const sortedPOs = useMemo(() => sortPOs(regularPOs, sortKey, sortDir), [regularPOs, sortKey, sortDir]);
+  const sortedSamples = useMemo(() => sortPOs(samplePOs, sortKey, sortDir), [samplePOs, sortKey, sortDir]);
 
   if (loading && pos.length === 0) {
     return (
@@ -301,7 +305,7 @@ export function PurchaseOrdersPage() {
     <div>
       <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">Purchase Orders</h2>
 
-      <StatCards pos={pos} vendors={vendors} />
+      <StatCards pos={regularPOs} vendors={vendors} />
 
       {/* Timeline */}
       <DeliveryTimeline timeline={timeline} />
@@ -326,7 +330,7 @@ export function PurchaseOrdersPage() {
           ))}
         </select>
         <span className="text-sm text-slate-400 dark:text-slate-500 ml-auto">
-          {pos.length} PO{pos.length !== 1 ? "s" : ""}
+          {regularPOs.length} PO{regularPOs.length !== 1 ? "s" : ""}
         </span>
       </div>
 
@@ -403,6 +407,87 @@ export function PurchaseOrdersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Sample POs */}
+      {samplePOs.length > 0 && (
+        <div className="mb-6">
+          <button
+            onClick={() => setShowSamples((v) => !v)}
+            className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors mb-2"
+          >
+            <svg className={`w-3.5 h-3.5 transition-transform ${showSamples ? "rotate-90" : ""}`} fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+            </svg>
+            <span>Sample Orders ({samplePOs.length})</span>
+          </button>
+          {showSamples && (
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+              <table className="w-full text-sm table-fixed">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <th className="w-10 px-2 py-3"></th>
+                    <th className="px-3 py-3 text-left font-medium w-28">PO #</th>
+                    <th className="px-3 py-3 text-left font-medium">Vendor</th>
+                    <th className="px-3 py-3 text-right font-medium w-16">Items</th>
+                    <th className="px-3 py-3 text-right font-medium w-24">Remaining</th>
+                    <th className="px-3 py-3 text-left font-medium w-28">Expected</th>
+                    <th className="px-3 py-3 text-right font-medium w-28">Progress</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedSamples.map((po) => {
+                    const isOpen = expanded === po.po_number;
+                    const pct = po.total_ordered_qty > 0
+                      ? Math.round((po.total_received_qty / po.total_ordered_qty) * 100)
+                      : 0;
+                    return (
+                      <Fragment key={po.po_number}>
+                        <tr
+                          onClick={() => setExpanded(isOpen ? null : po.po_number)}
+                          className={`cursor-pointer border-t border-slate-100 dark:border-slate-700/50 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/30 ${isOpen ? "bg-blue-50/50 dark:bg-blue-950/20" : ""}`}
+                        >
+                          <td className="px-2 py-2.5 text-center text-slate-400">
+                            <svg className={`w-3.5 h-3.5 inline-block transition-transform ${isOpen ? "rotate-90" : ""}`} fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                            </svg>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{po.po_number}</span>
+                          </td>
+                          <td className="px-3 py-2.5 text-slate-700 dark:text-slate-300 truncate" title={po.vendor || ""}>{po.vendor || "-"}</td>
+                          <td className="px-3 py-2.5 text-right tabular-nums text-slate-500 dark:text-slate-400">{po.total_lines}</td>
+                          <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-100">{po.total_remaining_qty.toLocaleString()}</td>
+                          <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400 text-xs">
+                            {po.earliest_expected ? fmtDate(po.earliest_expected) : "-"}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div className="flex items-center gap-2 justify-end">
+                              <div className="w-16 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
+                                <div
+                                  className={`h-1.5 rounded-full ${pct >= 100 ? "bg-green-500" : pct > 0 ? "bg-blue-500" : "bg-slate-300 dark:bg-slate-600"}`}
+                                  style={{ width: `${Math.min(pct, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-xs tabular-nums text-slate-400 w-8 text-right">{pct}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                        {isOpen && (
+                          <tr>
+                            <td colSpan={7} className="p-0">
+                              <PODetail poNumber={po.po_number} />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
     </div>
   );
