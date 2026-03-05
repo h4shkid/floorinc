@@ -21,7 +21,15 @@ function lineStatusBadge(ordered: number, received: number): { label: string; cl
   return { label: "Pending", cls: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400" };
 }
 
-type SortKey = "po_number" | "vendor" | "items" | "remaining" | "amount" | "expected" | "progress";
+function poStatusBadge(po: { earliest_expected: string | null; total_ordered_qty: number; total_received_qty: number }): { label: string; cls: string } {
+  if (po.total_received_qty >= po.total_ordered_qty) return { label: "Received", cls: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400" };
+  const today = new Date().toISOString().slice(0, 10);
+  if (po.earliest_expected && po.earliest_expected < today) return { label: "Late", cls: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" };
+  if (po.total_received_qty > 0) return { label: "Partial", cls: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400" };
+  return { label: "On Track", cls: "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" };
+}
+
+type SortKey = "po_number" | "vendor" | "items" | "remaining" | "amount" | "expected" | "progress" | "status";
 type SortDir = "asc" | "desc";
 
 function SortHeader({ label, sortKey, current, dir, onSort, align = "left", className = "" }: {
@@ -74,6 +82,11 @@ function sortPOs(pos: POListItem[], key: SortKey, dir: SortDir): POListItem[] {
         const pctA = a.total_ordered_qty > 0 ? a.total_received_qty / a.total_ordered_qty : 0;
         const pctB = b.total_ordered_qty > 0 ? b.total_received_qty / b.total_ordered_qty : 0;
         cmp = pctA - pctB;
+        break;
+      }
+      case "status": {
+        const order: Record<string, number> = { Late: 0, Partial: 1, "On Track": 2, Received: 3 };
+        cmp = (order[poStatusBadge(a).label] ?? 4) - (order[poStatusBadge(b).label] ?? 4);
         break;
       }
     }
@@ -352,17 +365,19 @@ export function PurchaseOrdersPage() {
               <SortHeader label="Amount" sortKey="amount" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="w-24" />
               <SortHeader label="Expected" sortKey="expected" current={sortKey} dir={sortDir} onSort={toggleSort} className="w-28" />
               <SortHeader label="Progress" sortKey="progress" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="w-28" />
+              <SortHeader label="Status" sortKey="status" current={sortKey} dir={sortDir} onSort={toggleSort} className="w-20" />
             </tr>
           </thead>
           <tbody>
             {pagedPOs.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400">No open purchase orders found</td></tr>
+              <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-400">No open purchase orders found</td></tr>
             )}
             {pagedPOs.map((po) => {
               const isOpen = expanded === po.po_number;
               const pct = po.total_ordered_qty > 0
                 ? Math.round((po.total_received_qty / po.total_ordered_qty) * 100)
                 : 0;
+              const status = poStatusBadge(po);
               return (
                 <Fragment key={po.po_number}>
                   <tr
@@ -398,10 +413,13 @@ export function PurchaseOrdersPage() {
                         <span className="text-xs tabular-nums text-slate-400 w-8 text-right">{pct}%</span>
                       </div>
                     </td>
+                    <td className="px-3 py-2.5">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${status.cls}`}>{status.label}</span>
+                    </td>
                   </tr>
                   {isOpen && (
                     <tr>
-                      <td colSpan={8} className="p-0">
+                      <td colSpan={9} className="p-0">
                         <PODetail poNumber={po.po_number} />
                       </td>
                     </tr>
