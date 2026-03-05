@@ -56,7 +56,7 @@ def run_akeneo_sync():
         skus = conn.execute("""
             SELECT sku, on_hand, qty_committed
             FROM inventory
-            WHERE is_drop_ship = 0
+            WHERE is_warehoused = 1
         """).fetchall()
 
         total = len(skus)
@@ -145,7 +145,7 @@ def run_akeneo_preview():
         skus = conn.execute("""
             SELECT sku, on_hand, qty_committed
             FROM inventory
-            WHERE is_drop_ship = 0
+            WHERE is_warehoused = 1
         """).fetchall()
 
         if len(skus) == 0:
