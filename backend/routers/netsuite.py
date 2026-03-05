@@ -104,6 +104,7 @@ def debug_committed():
         WHERE item.isInactive = 'F'
           AND loc.location = 3
           AND loc.quantityCommitted > 0
+          AND loc.quantityAvailable <= 0
         ORDER BY loc.quantityCommitted DESC
     """
     try:
