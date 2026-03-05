@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, Fragment } from "react";
+import { useState, useEffect, useCallback, useMemo, Fragment, type ReactNode } from "react";
 import { fetchPurchaseOrders, fetchPOLines, fetchVendorSummary, fetchPOTimeline } from "../../api/client";
 import type { POListItem, POLineItem, VendorSummary, TimelineWeek } from "../../types";
 
@@ -27,6 +27,57 @@ function lineStatusBadge(ordered: number, received: number): { label: string; cl
   if (received >= ordered) return { label: "Received", cls: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400" };
   if (received > 0) return { label: "Partial", cls: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400" };
   return { label: "Pending", cls: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400" };
+}
+
+type SortKey = "po_number" | "vendor" | "remaining" | "amount" | "expected" | "progress";
+type SortDir = "asc" | "desc";
+
+function SortHeader({ label, sortKey, current, dir, onSort, align = "left" }: {
+  label: ReactNode; sortKey: SortKey; current: SortKey; dir: SortDir; onSort: (k: SortKey) => void; align?: "left" | "right";
+}) {
+  const active = current === sortKey;
+  return (
+    <th
+      onClick={() => onSort(sortKey)}
+      className={`font-medium px-2 py-3 cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200 transition-colors ${align === "right" ? "text-right" : "text-left"}`}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <svg className={`w-3 h-3 ${active ? "text-blue-500" : "text-slate-300 dark:text-slate-600"}`} viewBox="0 0 12 12" fill="currentColor">
+          {active && dir === "asc" ? (
+            <path d="M6 3l4 5H2z" />
+          ) : active && dir === "desc" ? (
+            <path d="M6 9l4-5H2z" />
+          ) : (
+            <>
+              <path d="M6 2l3 3.5H3z" opacity="0.4" />
+              <path d="M6 10l3-3.5H3z" opacity="0.4" />
+            </>
+          )}
+        </svg>
+      </span>
+    </th>
+  );
+}
+
+function sortPOs(pos: POListItem[], key: SortKey, dir: SortDir): POListItem[] {
+  return [...pos].sort((a, b) => {
+    let cmp = 0;
+    switch (key) {
+      case "po_number": cmp = a.po_number.localeCompare(b.po_number); break;
+      case "vendor": cmp = (a.vendor || "").localeCompare(b.vendor || ""); break;
+      case "remaining": cmp = a.total_remaining_qty - b.total_remaining_qty; break;
+      case "amount": cmp = a.total_amount - b.total_amount; break;
+      case "expected": cmp = (a.earliest_expected || "9999").localeCompare(b.earliest_expected || "9999"); break;
+      case "progress": {
+        const pctA = a.total_ordered_qty > 0 ? a.total_received_qty / a.total_ordered_qty : 0;
+        const pctB = b.total_ordered_qty > 0 ? b.total_received_qty / b.total_ordered_qty : 0;
+        cmp = pctA - pctB;
+        break;
+      }
+    }
+    return dir === "asc" ? cmp : -cmp;
+  });
 }
 
 // --- Top Stats ---
@@ -143,6 +194,8 @@ export function PurchaseOrdersPage() {
   const [searchDebounced, setSearchDebounced] = useState("");
   const [vendorFilter, setVendorFilter] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("expected");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   useEffect(() => {
     const id = setTimeout(() => setSearchDebounced(search), 300);
@@ -165,6 +218,19 @@ export function PurchaseOrdersPage() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const vendorNames = useMemo(() => vendors.map((v) => v.vendor).sort(), [vendors]);
+
+  const toggleSort = useCallback((key: SortKey) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return key;
+      }
+      setSortDir(key === "remaining" || key === "amount" ? "desc" : "asc");
+      return key;
+    });
+  }, []);
+
+  const sortedPOs = useMemo(() => sortPOs(pos, sortKey, sortDir), [pos, sortKey, sortDir]);
 
   if (loading && pos.length === 0) {
     return (
@@ -210,20 +276,20 @@ export function PurchaseOrdersPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              <th className="text-left font-medium px-4 py-3 w-8"></th>
-              <th className="text-left font-medium px-2 py-3">PO #</th>
-              <th className="text-left font-medium px-2 py-3">Vendor</th>
-              <th className="text-right font-medium px-2 py-3">Remaining</th>
-              <th className="text-right font-medium px-2 py-3">Amount</th>
-              <th className="text-left font-medium px-2 py-3">Expected</th>
-              <th className="text-right font-medium px-2 py-3">Progress</th>
+              <th className="px-4 py-3 w-8"></th>
+              <SortHeader label="PO #" sortKey="po_number" current={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortHeader label="Vendor" sortKey="vendor" current={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortHeader label="Remaining" sortKey="remaining" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" />
+              <SortHeader label="Amount" sortKey="amount" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" />
+              <SortHeader label="Expected" sortKey="expected" current={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortHeader label="Progress" sortKey="progress" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" />
             </tr>
           </thead>
           <tbody>
-            {pos.length === 0 && (
+            {sortedPOs.length === 0 && (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">No open purchase orders found</td></tr>
             )}
-            {pos.map((po) => {
+            {sortedPOs.map((po) => {
               const isOpen = expanded === po.po_number;
               const pct = po.total_ordered_qty > 0
                 ? Math.round((po.total_received_qty / po.total_ordered_qty) * 100)
