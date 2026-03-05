@@ -35,6 +35,47 @@ export interface PurchaseOrderLine {
   amount: number;
 }
 
+export interface POListItem {
+  po_number: string;
+  po_date: string | null;
+  status: string | null;
+  vendor: string | null;
+  total_lines: number;
+  total_ordered_qty: number;
+  total_received_qty: number;
+  total_remaining_qty: number;
+  total_amount: number;
+  earliest_expected: string | null;
+  latest_expected: string | null;
+}
+
+export interface POLineItem {
+  sku: string;
+  display_name: string | null;
+  ordered_qty: number;
+  received_qty: number;
+  remaining_qty: number;
+  expected_date: string | null;
+  rate: number;
+  amount: number;
+  status: string | null;
+}
+
+export interface VendorSummary {
+  vendor: string;
+  total_pos: number;
+  total_remaining_qty: number;
+  total_amount: number;
+  nearest_expected: string | null;
+}
+
+export interface TimelineWeek {
+  week: string;
+  qty: number;
+  amount: number;
+  po_count: number;
+}
+
 export interface DashboardTotals {
   on_hand: number;
   total_sold_90d: number;

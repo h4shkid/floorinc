@@ -14,6 +14,47 @@ class PurchaseOrderLine(BaseModel):
     amount: float = 0
 
 
+class POListItem(BaseModel):
+    po_number: str
+    po_date: str | None
+    status: str | None
+    vendor: str | None
+    total_lines: int
+    total_ordered_qty: int
+    total_received_qty: int
+    total_remaining_qty: int
+    total_amount: float
+    earliest_expected: str | None
+    latest_expected: str | None
+
+
+class POLineItem(BaseModel):
+    sku: str
+    display_name: str | None = None
+    ordered_qty: int
+    received_qty: int
+    remaining_qty: int
+    expected_date: str | None
+    rate: float = 0
+    amount: float = 0
+    status: str | None = None
+
+
+class VendorSummary(BaseModel):
+    vendor: str
+    total_pos: int
+    total_remaining_qty: int
+    total_amount: float
+    nearest_expected: str | None
+
+
+class TimelineWeek(BaseModel):
+    week: str
+    qty: int
+    amount: float
+    po_count: int
+
+
 class ForecastItem(BaseModel):
     sku: str
     display_name: str

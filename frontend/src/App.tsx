@@ -6,12 +6,13 @@ import { SKUDetailPanel } from "./components/Dashboard/SKUDetail";
 import { FilterBar } from "./components/Filters/FilterBar";
 import { Pagination } from "./components/Filters/Pagination";
 import { ImportPage } from "./components/Import/ImportPage";
+import { PurchaseOrdersPage } from "./components/PurchaseOrders/PurchaseOrdersPage";
 import { GuidePage } from "./components/Guide/GuidePage";
 import { SpotlightTour, type TourStep } from "./components/Guide/SpotlightTour";
 import { fetchDataStats, fetchSyncStatus } from "./api/client";
 import type { DataStats, SyncStatus } from "./types";
 
-type Tab = "dashboard" | "import" | "guide";
+type Tab = "dashboard" | "purchase-orders" | "import" | "guide";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -217,7 +218,7 @@ function AuthenticatedApp() {
           </div>
           <div className="flex items-center gap-3">
             <nav className="flex gap-1">
-              {(["dashboard", "import", "guide"] as Tab[]).map((t) => (
+              {(["dashboard", "purchase-orders", "import", "guide"] as Tab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -227,7 +228,7 @@ function AuthenticatedApp() {
                       : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
                   }`}
                 >
-                  {t === "dashboard" ? "Dashboard" : t === "import" ? "Data Sync" : "Guide"}
+                  {t === "dashboard" ? "Dashboard" : t === "purchase-orders" ? "Purchase Orders" : t === "import" ? "Data Sync" : "Guide"}
                 </button>
               ))}
             </nav>
@@ -294,6 +295,8 @@ function AuthenticatedApp() {
             ) : null}
           </>
         )}
+
+        {tab === "purchase-orders" && <PurchaseOrdersPage />}
 
         {tab === "import" && (
           <div>

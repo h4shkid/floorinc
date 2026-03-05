@@ -1,4 +1,4 @@
-import type { DashboardResponse, DashboardParams, LeadTime, SKUDetail, SyncStatus, DataStats } from "../types";
+import type { DashboardResponse, DashboardParams, LeadTime, SKUDetail, SyncStatus, DataStats, POListItem, POLineItem, VendorSummary, TimelineWeek } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -113,4 +113,23 @@ export interface AkeneoPreviewStatus extends SyncStatus {
 
 export async function fetchAkeneoPreviewStatus(): Promise<AkeneoPreviewStatus> {
   return fetchJSON<AkeneoPreviewStatus>(`${BASE}/akeneo/preview/status`);
+}
+
+export async function fetchPurchaseOrders(search = "", vendor = ""): Promise<POListItem[]> {
+  const p = new URLSearchParams();
+  if (search) p.set("search", search);
+  if (vendor) p.set("vendor", vendor);
+  return fetchJSON<POListItem[]>(`${BASE}/purchase-orders?${p}`);
+}
+
+export async function fetchPOLines(poNumber: string): Promise<POLineItem[]> {
+  return fetchJSON<POLineItem[]>(`${BASE}/purchase-orders/${encodeURIComponent(poNumber)}`);
+}
+
+export async function fetchVendorSummary(): Promise<VendorSummary[]> {
+  return fetchJSON<VendorSummary[]>(`${BASE}/purchase-orders/summary`);
+}
+
+export async function fetchPOTimeline(): Promise<TimelineWeek[]> {
+  return fetchJSON<TimelineWeek[]>(`${BASE}/purchase-orders/timeline`);
 }
