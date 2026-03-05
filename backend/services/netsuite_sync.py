@@ -41,7 +41,7 @@ def sync_inventory(progress_callback=None):
         SELECT
             item.itemId AS sku,
             item.displayName AS display_name,
-            SUM(loc.quantityAvailable) AS on_hand,
+            SUM(loc.quantityOnHand) AS on_hand,
             SUM(loc.quantityOnOrder) AS qty_on_order,
             SUM(loc.quantityCommitted) AS qty_committed
         FROM inventoryItem item
