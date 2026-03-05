@@ -60,8 +60,14 @@ def calculate_promise_date_detail(
             date = po.get("expected_date")
             po_number = po.get("po_number")
             if date:
+                # Convert ISO date (2026-03-09) to MM/DD/YYYY for Akeneo
+                try:
+                    y, m, d = date.split("-")
+                    formatted_date = f"{m}/{d}/{y}"
+                except ValueError:
+                    formatted_date = date
                 return {
-                    "promise_date": date,
+                    "promise_date": formatted_date,
                     "deficit": deficit,
                     "covering_po": po_number,
                     "covering_po_date": date,
