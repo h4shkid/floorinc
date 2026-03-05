@@ -84,3 +84,37 @@ def debug_sales_check():
         "netsuite_total_results": total,
         "netsuite_sample": items,
     }
+
+
+@router.get("/debug/committed")
+def debug_committed():
+    """Check quantityCommitted from NetSuite inventory."""
+    if not is_configured():
+        return {"error": "NetSuite not configured"}
+
+    query = """
+        SELECT
+            item.itemId AS sku,
+            item.displayName AS display_name,
+            loc.quantityAvailable,
+            loc.quantityOnOrder,
+            loc.quantityCommitted
+        FROM inventoryItem item
+        JOIN inventoryItemLocations loc ON loc.item = item.id
+        WHERE item.isInactive = 'F'
+          AND loc.location = 3
+          AND loc.quantityCommitted > 0
+        ORDER BY loc.quantityCommitted DESC
+    """
+    try:
+        result = execute_suiteql(query, limit=20)
+        items = result.get("items", [])
+        total = result.get("totalResults", 0)
+    except Exception as e:
+        items = []
+        total = f"ERROR: {e}"
+
+    return {
+        "total_with_committed": total,
+        "sample": items,
+    }
