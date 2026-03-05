@@ -204,9 +204,11 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                             <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
                               po.status === "B" ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300" :
                               po.status === "D" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" :
+                              po.status === "E" ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300" :
+                              po.status === "F" ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300" :
                               "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
                             }`}>
-                              {po.status === "B" ? "Pending" : po.status === "D" ? "Partial" : po.status}
+                              {po.status === "B" ? "Pending" : po.status === "D" ? "Partial" : po.status === "E" ? "Received" : po.status === "F" ? "Billed" : po.status}
                             </span>
                           </td>
                         </tr>
