@@ -141,6 +141,9 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                 {data.incoming_qty > 0 && (
                   <div className="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5">+{data.incoming_qty.toLocaleString()} incoming</div>
                 )}
+                {data.qty_committed > 0 && (
+                  <div className="text-[11px] text-orange-600 dark:text-orange-400 mt-0.5">{data.qty_committed.toLocaleString()} committed</div>
+                )}
               </div>
               <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-center">
                 <div className={`text-lg font-bold tabular-nums ${
