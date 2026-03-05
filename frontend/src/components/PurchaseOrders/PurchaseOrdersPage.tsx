@@ -152,7 +152,7 @@ function PODetail({ poNumber }: { poNumber: string }) {
           <tr className="text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
             <th className="px-4 py-2 text-left font-medium w-36">SKU</th>
             <th className="px-3 py-2 text-left font-medium">Product</th>
-            <th className="px-3 py-2 text-right font-medium w-28">Fulfillment</th>
+            <th className="px-3 py-2 text-right font-medium w-40">Fulfillment</th>
             <th className="px-3 py-2 text-right font-medium w-24">Remaining</th>
             <th className="px-3 py-2 text-right font-medium w-20">Amount</th>
             <th className="px-3 py-2 text-left font-medium w-28">Expected</th>
@@ -167,9 +167,9 @@ function PODetail({ poNumber }: { poNumber: string }) {
               <tr key={i} className="border-t border-slate-200/60 dark:border-slate-700/40">
                 <td className="px-4 py-2 font-mono text-xs text-slate-500 dark:text-slate-400 truncate" title={line.sku}>{line.sku}</td>
                 <td className="px-3 py-2 text-slate-700 dark:text-slate-300 truncate max-w-0" title={line.display_name || ""}>{line.display_name || line.sku}</td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-3 py-2 text-right whitespace-nowrap">
                   <div className="flex items-center justify-end gap-2">
-                    <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                    <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400 shrink-0">
                       {line.received_qty.toLocaleString()} of {line.ordered_qty.toLocaleString()}
                     </span>
                     <div className="w-10 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
