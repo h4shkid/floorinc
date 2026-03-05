@@ -365,7 +365,7 @@ export function PurchaseOrdersPage() {
               <SortHeader label="Amount" sortKey="amount" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="w-24" />
               <SortHeader label="Expected" sortKey="expected" current={sortKey} dir={sortDir} onSort={toggleSort} className="w-28" />
               <SortHeader label="Progress" sortKey="progress" current={sortKey} dir={sortDir} onSort={toggleSort} align="right" className="w-28" />
-              <SortHeader label="Status" sortKey="status" current={sortKey} dir={sortDir} onSort={toggleSort} className="w-20" />
+              <SortHeader label="Status" sortKey="status" current={sortKey} dir={sortDir} onSort={toggleSort} className="w-24" />
             </tr>
           </thead>
           <tbody>
@@ -414,7 +414,7 @@ export function PurchaseOrdersPage() {
                       </div>
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${status.cls}`}>{status.label}</span>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${status.cls}`}>{status.label}</span>
                     </td>
                   </tr>
                   {isOpen && (
