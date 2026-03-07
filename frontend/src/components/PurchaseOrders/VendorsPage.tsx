@@ -258,7 +258,7 @@ function VendorComparisonTable({ vendors, pos, onVendorClick }: { vendors: Vendo
 }
 
 // --- Main Page ---
-export function VendorsPage() {
+export function VendorsPage({ onNavigateToPO }: { onNavigateToPO?: (poNumber: string) => void }) {
   const [vendors, setVendors] = useState<VendorSummary[]>([]);
   const [pos, setPOs] = useState<POListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -295,7 +295,14 @@ export function VendorsPage() {
       <VendorComparisonTable vendors={vendors} pos={pos} onVendorClick={setSelectedVendor} />
 
       {selectedVendor && (
-        <VendorScorecardPanel vendor={selectedVendor} onClose={() => setSelectedVendor(null)} />
+        <VendorScorecardPanel
+          vendor={selectedVendor}
+          onClose={() => setSelectedVendor(null)}
+          onNavigateToPO={onNavigateToPO ? (poNumber) => {
+            setSelectedVendor(null);
+            onNavigateToPO(poNumber);
+          } : undefined}
+        />
       )}
     </div>
   );

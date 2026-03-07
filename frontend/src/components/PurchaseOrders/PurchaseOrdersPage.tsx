@@ -523,7 +523,7 @@ function VendorComparison({ vendors, pos, onVendorClick }: { vendors: VendorSumm
 }
 
 // --- Main Page ---
-export function PurchaseOrdersPage() {
+export function PurchaseOrdersPage({ initialExpandPO, onExpandPOConsumed }: { initialExpandPO?: string | null; onExpandPOConsumed?: () => void } = {}) {
   const [pos, setPOs] = useState<POListItem[]>([]);
   const [vendors, setVendors] = useState<VendorSummary[]>([]);
   const [timeline, setTimeline] = useState<TimelineWeek[]>([]);
@@ -538,6 +538,14 @@ export function PurchaseOrdersPage() {
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 20;
+
+  // Handle navigation from Vendor scorecard → expand a specific PO
+  useEffect(() => {
+    if (initialExpandPO) {
+      setExpanded(initialExpandPO);
+      onExpandPOConsumed?.();
+    }
+  }, [initialExpandPO, onExpandPOConsumed]);
 
   useEffect(() => {
     const id = setTimeout(() => setSearchDebounced(search), 300);
@@ -834,7 +842,14 @@ export function PurchaseOrdersPage() {
       )}
 
       {selectedVendor && (
-        <VendorScorecardPanel vendor={selectedVendor} onClose={() => setSelectedVendor(null)} />
+        <VendorScorecardPanel
+          vendor={selectedVendor}
+          onClose={() => setSelectedVendor(null)}
+          onNavigateToPO={(poNumber) => {
+            setSelectedVendor(null);
+            setExpanded(poNumber);
+          }}
+        />
       )}
     </div>
   );
