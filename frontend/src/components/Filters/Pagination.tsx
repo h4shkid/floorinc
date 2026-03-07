@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 interface Props {
   page: number;
   pageSize: number;
@@ -17,23 +19,25 @@ export function Pagination({ page, pageSize, total, onChange }: Props) {
       <div>
         Showing {start.toLocaleString()}-{end.toLocaleString()} of {total.toLocaleString()}
       </div>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <button
           disabled={page <= 1}
           onClick={() => onChange(page - 1)}
-          className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed dark:text-slate-300"
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed dark:text-slate-300 transition-colors duration-150 text-sm font-medium"
         >
+          <ChevronLeft className="w-4 h-4" />
           Prev
         </button>
-        <span className="px-3 py-1.5">
+        <span className="px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg">
           Page {page} of {totalPages}
         </span>
         <button
           disabled={page >= totalPages}
           onClick={() => onChange(page + 1)}
-          className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed dark:text-slate-300"
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed dark:text-slate-300 transition-colors duration-150 text-sm font-medium"
         >
           Next
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>

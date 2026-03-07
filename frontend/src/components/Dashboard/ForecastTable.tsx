@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Check, Copy } from "lucide-react";
 import type { ForecastItem, DashboardTotals } from "../../types";
 import { updateLeadTime, updateDropShip } from "../../api/client";
 import { UrgencyBadge } from "./UrgencyBadge";
@@ -160,14 +161,9 @@ function CopySku({ sku }: { sku: string }) {
       className="shrink-0 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
     >
       {copied ? (
-        <svg className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
+        <Check className="w-3 h-3 text-green-500" strokeWidth={2.5} />
       ) : (
-        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-        </svg>
+        <Copy className="w-3 h-3" strokeWidth={2} />
       )}
     </button>
   );
@@ -180,11 +176,9 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
     return sortDir === "asc" ? " \u2191" : " \u2193";
   };
 
-  const rowBg = (_urgency: string) => "";
-
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700" data-tour="forecast-table">
-      <table className="w-full text-[13px] table-fixed">
+      <table className="w-full text-sm table-fixed">
         <colgroup>
           <col className="w-14" />       {/* urgency badge */}
           <col style={{ width: "35%" }} /> {/* product - takes remaining space */}
@@ -200,11 +194,11 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
           <col className="w-24" />        {/* rev 90d */}
         </colgroup>
         <thead>
-          <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700" data-tour="table-header">
+          <tr className="bg-slate-50 dark:bg-slate-800/50 border-b-2 border-slate-200 dark:border-slate-700" data-tour="table-header">
             {COLUMNS.map((col) => (
               <th
                 key={col.key}
-                className={`px-2 py-2 font-semibold text-slate-500 dark:text-slate-400 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 select-none whitespace-nowrap ${
+                className={`px-3 py-2.5 font-semibold text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 select-none whitespace-nowrap transition-colors ${
                   col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"
                 }`}
                 onClick={() => onSort(col.key)}
@@ -219,17 +213,17 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
           {items.map((item, idx) => (
             <tr
               key={item.sku}
-              className={`border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-slate-700/50 ${rowBg(item.urgency)} ${onRowClick ? "cursor-pointer" : ""}`}
+              className={`border-b border-slate-100 dark:border-slate-700/50 ${idx % 2 === 1 ? "bg-slate-50/50 dark:bg-slate-800/30" : ""} hover:bg-blue-50/50 dark:hover:bg-slate-700/40 transition-colors duration-150 ${onRowClick ? "cursor-pointer" : ""}`}
               onClick={() => onRowClick?.(item.sku)}
               {...(idx === 0 ? { "data-tour": "first-row" } : {})}
             >
               {/* Urgency */}
-              <td className="px-2 py-1.5" {...(idx === 0 ? { "data-tour": "urgency-badge" } : {})}>
+              <td className="px-3 py-2.5" {...(idx === 0 ? { "data-tour": "urgency-badge" } : {})}>
                 <UrgencyBadge urgency={item.urgency} />
               </td>
 
               {/* Product — SKU + name stacked + drop ship badge */}
-              <td className="px-2 py-1.5 overflow-hidden" title={`${item.sku}\n${item.display_name}`} {...(idx === 0 ? { "data-tour": "product-cell" } : {})}>
+              <td className="px-3 py-2.5 overflow-hidden" title={`${item.sku}\n${item.display_name}`} {...(idx === 0 ? { "data-tour": "product-cell" } : {})}>
                 <div className="truncate font-medium text-slate-900 dark:text-slate-100 leading-tight">
                   {item.display_name}
                 </div>
@@ -243,21 +237,21 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
               </td>
 
               {/* Manufacturer */}
-              <td className="px-2 py-1.5 overflow-hidden">
+              <td className="px-3 py-2.5 overflow-hidden">
                 <span className="truncate block text-xs text-slate-600 dark:text-slate-400" title={item.manufacturer || ""}>
                   {item.manufacturer || "-"}
                 </span>
               </td>
 
               {/* Channel */}
-              <td className="px-2 py-1.5 text-center">
+              <td className="px-3 py-2.5 text-center">
                 <span className="text-xs text-slate-600 dark:text-slate-400 font-medium" title={item.top_channel || ""}>
                   {shortChannel(item.top_channel)}
                 </span>
               </td>
 
               {/* Available */}
-              <td className={`px-2 py-1.5 text-right tabular-nums ${item.available_qty < 0 ? "text-red-600 dark:text-red-400 font-bold" : "text-slate-700 dark:text-slate-300"}`}>
+              <td className={`px-3 py-2.5 text-right tabular-nums ${item.available_qty < 0 ? "text-red-600 dark:text-red-400 font-bold" : "text-slate-700 dark:text-slate-300"}`}>
                 {item.available_qty.toLocaleString()}
                 {item.incoming_qty > 0 && (
                   <div className="text-[10px] text-blue-600 dark:text-blue-400 font-normal">+{item.incoming_qty.toLocaleString()} incoming</div>
@@ -265,22 +259,22 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
               </td>
 
               {/* Velocity */}
-              <td className="px-2 py-1.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
+              <td className="px-3 py-2.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
                 {item.velocity.toFixed(1)}
               </td>
 
               {/* Seasonality */}
-              <td className="px-2 py-1.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
+              <td className="px-3 py-2.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
                 {item.seasonality_factor.toFixed(1)}x
               </td>
 
               {/* Adjusted Velocity */}
-              <td className="px-2 py-1.5 text-right tabular-nums text-slate-700 dark:text-slate-300 font-medium">
+              <td className="px-3 py-2.5 text-right tabular-nums text-slate-700 dark:text-slate-300 font-medium">
                 {item.adjusted_velocity.toFixed(1)}
               </td>
 
               {/* Days Left */}
-              <td className={`px-2 py-1.5 text-right tabular-nums font-semibold ${
+              <td className={`px-3 py-2.5 text-right tabular-nums font-semibold ${
                 item.days_remaining !== null && item.days_remaining <= item.lead_time_days
                   ? "text-red-600 dark:text-red-400"
                   : item.days_remaining !== null && item.days_remaining <= item.lead_time_days * 1.5
@@ -291,17 +285,17 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
               </td>
 
               {/* Lead Time — double-click to edit */}
-              <td className="px-2 py-1.5 text-right tabular-nums text-slate-500 dark:text-slate-400" onClick={(e) => e.stopPropagation()} {...(idx === 0 ? { "data-tour": "lead-time-cell" } : {})}>
+              <td className="px-3 py-2.5 text-right tabular-nums text-slate-500 dark:text-slate-400" onClick={(e) => e.stopPropagation()} {...(idx === 0 ? { "data-tour": "lead-time-cell" } : {})}>
                 <LeadTimeCell sku={item.sku} value={item.lead_time_days} onSaved={() => onLeadTimeChanged?.()} />
               </td>
 
               {/* Sold 90d */}
-              <td className="px-2 py-1.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
+              <td className="px-3 py-2.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
                 {item.total_sold_90d.toLocaleString()}
               </td>
 
               {/* Revenue 90d */}
-              <td className="px-2 py-1.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
+              <td className="px-3 py-2.5 text-right tabular-nums text-slate-600 dark:text-slate-400">
                 ${(item.total_revenue_90d ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </td>
             </tr>
@@ -310,16 +304,16 @@ export function ForecastTable({ items, sortBy, sortDir, onSort, onRowClick, onLe
         {totals && (
           <tfoot>
             <tr className="bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600 font-semibold text-slate-900 dark:text-slate-100">
-              <td className="px-2 py-2" />
+              <td className="px-3 py-2.5" />
               <td className="px-2 py-2 text-xs uppercase tracking-wide">Totals</td>
-              <td className="px-2 py-2" />
-              <td className="px-2 py-2" />
+              <td className="px-3 py-2.5" />
+              <td className="px-3 py-2.5" />
               <td className="px-2 py-2 text-right tabular-nums">{totals.on_hand.toLocaleString()}</td>
-              <td className="px-2 py-2" />
-              <td className="px-2 py-2" />
-              <td className="px-2 py-2" />
-              <td className="px-2 py-2" />
-              <td className="px-2 py-2" />
+              <td className="px-3 py-2.5" />
+              <td className="px-3 py-2.5" />
+              <td className="px-3 py-2.5" />
+              <td className="px-3 py-2.5" />
+              <td className="px-3 py-2.5" />
               <td className="px-2 py-2 text-right tabular-nums">{totals.total_sold_90d.toLocaleString()}</td>
               <td className="px-2 py-2 text-right tabular-nums">${(totals.total_revenue_90d ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
             </tr>

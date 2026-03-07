@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, type FormEvent } from "react";
+import { Sun, Moon } from "lucide-react";
 import { useForecast } from "./hooks/useForecast";
 import { SummaryCards } from "./components/Dashboard/SummaryCards";
+import { DashboardSkeleton } from "./components/Dashboard/Skeleton";
 import { ForecastTable } from "./components/Dashboard/ForecastTable";
 import { SKUDetailPanel } from "./components/Dashboard/SKUDetail";
 import { FilterBar } from "./components/Filters/FilterBar";
@@ -100,7 +102,7 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8 space-y-5"
+        className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-xl shadow-lg p-8 space-y-5 transition-all duration-200"
       >
         <div className="text-center">
           <img src="/logo.png" alt="FlooringInc" className="h-10 mx-auto mb-3" />
@@ -114,7 +116,7 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:shadow-md transition-all duration-150"
           autoFocus
         />
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -239,13 +241,9 @@ function AuthenticatedApp() {
               title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
             >
               {darkMode ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-                </svg>
+                <Sun className="h-5 w-5" />
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                </svg>
+                <Moon className="h-5 w-5" />
               )}
             </button>
           </div>
@@ -270,10 +268,7 @@ function AuthenticatedApp() {
             <FilterBar params={params} onChange={updateParams} />
 
             {loading ? (
-              <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-slate-300 dark:border-slate-600 border-t-blue-500 mb-3" />
-                <div>Calculating forecasts...</div>
-              </div>
+              <DashboardSkeleton />
             ) : data ? (
               <>
                 <ForecastTable
