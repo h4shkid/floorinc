@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import type { DashboardParams } from "../../types";
 import { ManufacturerSelect } from "./ManufacturerSelect";
 
@@ -153,6 +154,12 @@ export function FilterBar({ params, onChange }: Props) {
           <div className="w-9 h-5 bg-slate-200 dark:bg-slate-600 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
         </label>
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Active only</span>
+        <span className="relative group">
+          <Info className="h-3 w-3 text-slate-400 dark:text-slate-500 cursor-help" />
+          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-[10px] leading-tight text-white dark:text-slate-900 text-wrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-[240px] text-center font-medium shadow-lg">
+            When enabled, only shows SKUs that have had at least one sale in the selected velocity window. Turn off to include zero-velocity SKUs.
+          </span>
+        </span>
       </div>
     </div>
     </div>
