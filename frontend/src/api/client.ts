@@ -54,8 +54,8 @@ export async function fetchManufacturers(): Promise<string[]> {
   return fetchJSON<string[]>(`${BASE}/forecast/manufacturers`);
 }
 
-export async function fetchSKUDetail(sku: string): Promise<SKUDetail> {
-  return fetchJSON<SKUDetail>(`${BASE}/forecast/${encodeURIComponent(sku)}/detail`);
+export async function fetchSKUDetail(sku: string, velocityWindow = 90): Promise<SKUDetail> {
+  return fetchJSON<SKUDetail>(`${BASE}/forecast/${encodeURIComponent(sku)}/detail?velocity_window=${velocityWindow}`);
 }
 
 export async function fetchSyncStatus(): Promise<SyncStatus> {

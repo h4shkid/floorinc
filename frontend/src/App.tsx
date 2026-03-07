@@ -305,7 +305,7 @@ function AuthenticatedApp() {
       </main>
 
       {selectedSku && (
-        <SKUDetailPanel sku={selectedSku} onClose={() => setSelectedSku(null)} />
+        <SKUDetailPanel sku={selectedSku} velocityWindow={params.velocity_window} onClose={() => setSelectedSku(null)} />
       )}
 
       <ChatWidget />
