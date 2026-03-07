@@ -205,9 +205,9 @@ def get_summary(velocity_window: int = Query(90, ge=7, le=365)):
 
 
 @router.get("/{sku}/detail", response_model=SKUDetailResponse)
-def get_sku_detail(sku: str):
+def get_sku_detail(sku: str, velocity_window: int = Query(90, ge=7, le=365)):
     # Get forecast row for this SKU
-    df = build_forecast(90, active_only=False)
+    df = build_forecast(velocity_window, active_only=False)
     row = df[df["sku"] == sku]
     if row.empty:
         raise HTTPException(status_code=404, detail=f"SKU not found: {sku}")
@@ -271,8 +271,8 @@ def get_sku_detail(sku: str):
         for o in order_rows
     ]
 
-    # 90-day financials
-    ninety_days_ago = (date.today() - timedelta(days=90)).strftime("%Y-%m-%d")
+    # Financials for the selected velocity window
+    window_start = (date.today() - timedelta(days=velocity_window)).strftime("%Y-%m-%d")
     fin = conn.execute(
         """
         SELECT COALESCE(SUM(item_revenue), 0) AS revenue,
@@ -280,7 +280,7 @@ def get_sku_detail(sku: str):
         FROM sales
         WHERE sku = ? AND order_date >= ? AND item_revenue > 0
         """,
-        (sku, ninety_days_ago),
+        (sku, window_start),
     ).fetchone()
 
     # Purchase orders

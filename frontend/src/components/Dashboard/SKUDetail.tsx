@@ -6,6 +6,7 @@ import { DetailPanelSkeleton } from "./Skeleton";
 
 interface Props {
   sku: string;
+  velocityWindow?: number;
   onClose: () => void;
 }
 
@@ -66,7 +67,7 @@ const CHANNEL_COLORS = [
   "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500", "bg-rose-500", "bg-cyan-500", "bg-orange-500", "bg-indigo-500",
 ];
 
-export function SKUDetailPanel({ sku, onClose }: Props) {
+export function SKUDetailPanel({ sku, velocityWindow = 90, onClose }: Props) {
   const [data, setData] = useState<SKUDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,11 +76,11 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetchSKUDetail(sku)
+    fetchSKUDetail(sku, velocityWindow)
       .then(setData)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [sku]);
+  }, [sku, velocityWindow]);
 
   function handleBackdropClick(e: React.MouseEvent) {
     if (e.target === backdropRef.current) onClose();
@@ -337,14 +338,14 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-2 space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                      <DollarSign className="h-3.5 w-3.5" /> Revenue (90d) <InfoTip text="Total revenue generated in the last 90 days" />
+                      <DollarSign className="h-3.5 w-3.5" /> Revenue ({velocityWindow}d) <InfoTip text={`Total revenue generated in the last ${velocityWindow} days`} />
                     </span>
                     <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">{fmtCurrency(data.total_revenue_90d)}</span>
                   </div>
                   {data.margin_90d !== null && (
                     <div className="flex justify-between items-center">
                       <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                        <BarChart3 className="h-3.5 w-3.5" /> Margin (90d) <InfoTip text="Profit margin based on revenue minus cost of goods over 90 days" />
+                        <BarChart3 className="h-3.5 w-3.5" /> Margin ({velocityWindow}d) <InfoTip text={`Profit margin based on revenue minus cost of goods over ${velocityWindow} days`} />
                       </span>
                       <span className={`font-bold tabular-nums ${data.margin_90d >= 30 ? "text-green-600 dark:text-green-400" : data.margin_90d >= 15 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>{data.margin_90d.toFixed(1)}%</span>
                     </div>
