@@ -30,11 +30,12 @@ const CATEGORIES = [
 ];
 
 const selectClass =
-  "px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-slate-200";
+  "px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 dark:text-slate-200";
 
 export function FilterBar({ params, onChange }: Props) {
   return (
-    <div className="flex flex-wrap gap-3 mb-4 items-end" data-tour="filter-bar">
+    <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-4" data-tour="filter-bar">
+    <div className="flex flex-wrap gap-3 items-end">
       {/* Search */}
       <div className="flex-1 min-w-48">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Search</label>
@@ -43,7 +44,7 @@ export function FilterBar({ params, onChange }: Props) {
           placeholder="SKU or product name..."
           value={params.search}
           onChange={(e) => onChange({ search: e.target.value })}
-          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400"
+          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400"
         />
       </div>
 
@@ -153,6 +154,7 @@ export function FilterBar({ params, onChange }: Props) {
         </label>
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Active only</span>
       </div>
+    </div>
     </div>
   );
 }

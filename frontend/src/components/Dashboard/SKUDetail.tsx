@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef } from "react";
+import { X, Sparkles } from "lucide-react";
 import type { SKUDetail } from "../../types";
 import { fetchSKUDetail } from "../../api/client";
 import { UrgencyBadge } from "./UrgencyBadge";
+import { DetailPanelSkeleton } from "./Skeleton";
 
 interface Props {
   sku: string;
@@ -96,17 +98,11 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {loading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-slate-300 border-t-blue-500" />
-          </div>
-        )}
+        {loading && <DetailPanelSkeleton />}
 
         {error && (
           <div className="mx-5 mt-5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-800 dark:text-red-300 text-sm">
@@ -164,10 +160,7 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
               <div className="rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/30 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-5 h-5 rounded bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-indigo-600 dark:text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM4 11a1 1 0 100-2H3a1 1 0 000 2h1zM10 18a1 1 0 001-1v-1a1 1 0 10-2 0v1a1 1 0 001 1z" />
-                      <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z" clipRule="evenodd" />
-                    </svg>
+                    <Sparkles className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide">AI Insight</span>
                   {data.insight_generated_at && (

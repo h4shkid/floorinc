@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from "react";
+import { Trash2, Minus, MessageCircle, Send } from "lucide-react";
 import type { ChatMessage as ChatMessageType } from "../../hooks/useChat";
 import { ChatMessage } from "./ChatMessage";
 
@@ -59,9 +60,7 @@ export function ChatWindow({ messages, isStreaming, onSend, onClear, onClose }: 
               className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-colors"
               title="Clear chat"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
+              <Trash2 className="h-4 w-4" />
             </button>
           )}
           <button
@@ -69,9 +68,7 @@ export function ChatWindow({ messages, isStreaming, onSend, onClear, onClose }: 
             className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 transition-colors"
             title="Minimize"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
-            </svg>
+            <Minus className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -81,9 +78,7 @@ export function ChatWindow({ messages, isStreaming, onSend, onClear, onClose }: 
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center">
             <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950 flex items-center justify-center mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
+              <MessageCircle className="h-6 w-6 text-blue-500" />
             </div>
             <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ask me anything</p>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">I can look up inventory, sales, POs, and forecasts</p>
@@ -127,9 +122,7 @@ export function ChatWindow({ messages, isStreaming, onSend, onClear, onClose }: 
             disabled={!input.trim() || isStreaming}
             className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-            </svg>
+            <Send className="h-4 w-4" />
           </button>
         </div>
       </div>
