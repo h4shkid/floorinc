@@ -76,6 +76,49 @@ export interface TimelineWeek {
   po_count: number;
 }
 
+export interface VendorPO {
+  po_number: string;
+  po_date: string | null;
+  status: string | null;
+  total_lines: number;
+  total_ordered_qty: number;
+  total_received_qty: number;
+  total_remaining_qty: number;
+  total_amount: number;
+  earliest_expected: string | null;
+  latest_expected: string | null;
+}
+
+export interface VendorSKU {
+  sku: string;
+  display_name: string | null;
+  remaining_qty: number;
+  total_ordered_qty: number;
+  total_received_qty: number;
+  po_count: number;
+}
+
+export interface MonthlySpend {
+  month: string;
+  amount: number;
+  po_count: number;
+}
+
+export interface VendorScorecard {
+  vendor: string;
+  rating: "Good" | "Average" | "Poor";
+  open_pos: number;
+  remaining_units: number;
+  total_on_order: number;
+  late_pos: number;
+  total_open_pos_with_date: number;
+  late_percentage: number;
+  avg_lead_time_days: number | null;
+  monthly_spend: MonthlySpend[];
+  skus: VendorSKU[];
+  purchase_orders: VendorPO[];
+}
+
 export interface DashboardTotals {
   on_hand: number;
   total_sold_90d: number;

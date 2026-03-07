@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Query
-from models import POListItem, POLineItem, VendorSummary, TimelineWeek
+from models import POListItem, POLineItem, VendorSummary, TimelineWeek, VendorScorecard, VendorPO, VendorSKU, MonthlySpend
 from database import get_connection
 
 router = APIRouter(prefix="/api/purchase-orders", tags=["purchase-orders"])
@@ -72,6 +72,143 @@ def delivery_timeline():
             po_count=len(w["po_numbers"]),
         ))
     return result
+
+
+@router.get("/vendor/{vendor}", response_model=VendorScorecard)
+def vendor_scorecard(vendor: str):
+    conn = get_connection()
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    # Query 1: PO aggregates
+    po_rows = conn.execute("""
+        SELECT
+            po_number,
+            MIN(po_date) as po_date,
+            MIN(status) as status,
+            COUNT(*) as total_lines,
+            SUM(ordered_qty) as total_ordered_qty,
+            SUM(received_qty) as total_received_qty,
+            SUM(remaining_qty) as total_remaining_qty,
+            SUM(amount) as total_amount,
+            MIN(CASE WHEN expected_date IS NOT NULL AND expected_date != '' THEN expected_date END) as earliest_expected,
+            MAX(CASE WHEN expected_date IS NOT NULL AND expected_date != '' THEN expected_date END) as latest_expected
+        FROM purchase_orders
+        WHERE vendor = ? AND remaining_qty > 0
+        GROUP BY po_number
+        ORDER BY MIN(po_date) DESC
+    """, (vendor,)).fetchall()
+
+    purchase_orders = []
+    late_pos = 0
+    total_open_pos_with_date = 0
+    remaining_units = 0
+    total_on_order = 0.0
+
+    for r in po_rows:
+        remaining_units += r["total_remaining_qty"] or 0
+        total_on_order += r["total_amount"] or 0
+        earliest = r["earliest_expected"]
+        if earliest:
+            total_open_pos_with_date += 1
+            if earliest < today and (r["total_remaining_qty"] or 0) > 0:
+                late_pos += 1
+        purchase_orders.append(VendorPO(
+            po_number=r["po_number"],
+            po_date=r["po_date"],
+            status=r["status"],
+            total_lines=r["total_lines"],
+            total_ordered_qty=r["total_ordered_qty"] or 0,
+            total_received_qty=r["total_received_qty"] or 0,
+            total_remaining_qty=r["total_remaining_qty"] or 0,
+            total_amount=r["total_amount"] or 0,
+            earliest_expected=r["earliest_expected"],
+            latest_expected=r["latest_expected"],
+        ))
+
+    late_percentage = round(late_pos / total_open_pos_with_date * 100, 1) if total_open_pos_with_date > 0 else 0.0
+
+    # Query 2: SKU aggregates
+    sku_rows = conn.execute("""
+        SELECT
+            po.sku,
+            COALESCE(i.display_name, po.sku) as display_name,
+            SUM(po.remaining_qty) as remaining_qty,
+            SUM(po.ordered_qty) as total_ordered_qty,
+            SUM(po.received_qty) as total_received_qty,
+            COUNT(DISTINCT po.po_number) as po_count
+        FROM purchase_orders po
+        LEFT JOIN inventory i ON po.sku = i.sku
+        WHERE po.vendor = ? AND po.remaining_qty > 0
+        GROUP BY po.sku
+        ORDER BY SUM(po.remaining_qty) DESC
+    """, (vendor,)).fetchall()
+
+    skus = [VendorSKU(
+        sku=s["sku"],
+        display_name=s["display_name"],
+        remaining_qty=s["remaining_qty"] or 0,
+        total_ordered_qty=s["total_ordered_qty"] or 0,
+        total_received_qty=s["total_received_qty"] or 0,
+        po_count=s["po_count"],
+    ) for s in sku_rows]
+
+    # Query 3: Monthly spend
+    spend_rows = conn.execute("""
+        SELECT
+            SUBSTR(po_date, 1, 7) as month,
+            SUM(amount) as amount,
+            COUNT(DISTINCT po_number) as po_count
+        FROM purchase_orders
+        WHERE vendor = ? AND po_date IS NOT NULL AND po_date != ''
+        GROUP BY SUBSTR(po_date, 1, 7)
+        ORDER BY month DESC
+        LIMIT 12
+    """, (vendor,)).fetchall()
+
+    monthly_spend = [MonthlySpend(
+        month=s["month"],
+        amount=s["amount"] or 0,
+        po_count=s["po_count"],
+    ) for s in reversed(spend_rows)]
+
+    # Query 4: Avg lead time
+    lt_row = conn.execute("""
+        SELECT AVG(JULIANDAY(expected_date) - JULIANDAY(po_date)) as avg_lead_time
+        FROM purchase_orders
+        WHERE vendor = ?
+            AND expected_date IS NOT NULL AND expected_date != ''
+            AND po_date IS NOT NULL AND po_date != ''
+            AND remaining_qty > 0
+    """, (vendor,)).fetchone()
+
+    avg_lead_time = round(lt_row["avg_lead_time"], 1) if lt_row and lt_row["avg_lead_time"] is not None else None
+
+    conn.close()
+
+    # Rating
+    if total_open_pos_with_date == 0:
+        rating = "Average"
+    elif late_percentage <= 10:
+        rating = "Good"
+    elif late_percentage <= 30:
+        rating = "Average"
+    else:
+        rating = "Poor"
+
+    return VendorScorecard(
+        vendor=vendor,
+        rating=rating,
+        open_pos=len(po_rows),
+        remaining_units=remaining_units,
+        total_on_order=round(total_on_order, 2),
+        late_pos=late_pos,
+        total_open_pos_with_date=total_open_pos_with_date,
+        late_percentage=late_percentage,
+        avg_lead_time_days=avg_lead_time,
+        monthly_spend=monthly_spend,
+        skus=skus,
+        purchase_orders=purchase_orders,
+    )
 
 
 @router.get("/{po_number}", response_model=list[POLineItem])
