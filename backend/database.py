@@ -107,6 +107,14 @@ def init_db():
             amount REAL DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS idx_po_sku ON purchase_orders(sku);
+
+        CREATE TABLE IF NOT EXISTS chat_memory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            expires_at TEXT
+        );
     """)
     conn.commit()
 

@@ -9,6 +9,7 @@ import { ImportPage } from "./components/Import/ImportPage";
 import { PurchaseOrdersPage } from "./components/PurchaseOrders/PurchaseOrdersPage";
 import { GuidePage } from "./components/Guide/GuidePage";
 import { SpotlightTour, type TourStep } from "./components/Guide/SpotlightTour";
+import { ChatWidget } from "./components/Chat/ChatWidget";
 import { fetchDataStats, fetchSyncStatus } from "./api/client";
 import type { DataStats, SyncStatus } from "./types";
 
@@ -311,6 +312,8 @@ function AuthenticatedApp() {
       {selectedSku && (
         <SKUDetailPanel sku={selectedSku} onClose={() => setSelectedSku(null)} />
       )}
+
+      <ChatWidget />
     </div>
   );
 }
