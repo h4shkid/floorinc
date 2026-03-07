@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { X, Sparkles, Package, Clock, TrendingUp, Gauge, Calendar, DollarSign, BarChart3, ShoppingCart, Truck } from "lucide-react";
+import { X, Sparkles, Package, Clock, TrendingUp, Gauge, Calendar, DollarSign, BarChart3, ShoppingCart, Truck, Info } from "lucide-react";
 import type { SKUDetail } from "../../types";
 import { fetchSKUDetail } from "../../api/client";
 import { DetailPanelSkeleton } from "./Skeleton";
@@ -49,6 +49,17 @@ function timeAgo(dateStr: string): string {
   const days = Math.floor(hours / 24);
   if (days === 1) return "1 day ago";
   return `${days} days ago`;
+}
+
+function InfoTip({ text }: { text: string }) {
+  return (
+    <span className="relative group">
+      <Info className="h-3 w-3 text-slate-300 dark:text-slate-600 cursor-help" />
+      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-[10px] leading-tight text-white dark:text-slate-900 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 max-w-[220px] text-center font-medium shadow-lg">
+        {text}
+      </span>
+    </span>
+  );
 }
 
 const CHANNEL_COLORS = [
@@ -293,32 +304,32 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
               <div className="p-4 space-y-2 text-sm">
                 <div className="flex justify-between items-center">
                   <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <TrendingUp className="h-3.5 w-3.5" /> Velocity
+                    <TrendingUp className="h-3.5 w-3.5" /> Velocity <InfoTip text="Average units sold per day over the selected time window" />
                   </span>
                   <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">{data.velocity.toFixed(2)}/day</span>
                 </div>
                 <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 -mx-4 px-4 py-1.5">
                   <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
-                    <TrendingUp className="h-3.5 w-3.5" /> Adj. Velocity
+                    <TrendingUp className="h-3.5 w-3.5" /> Adj. Velocity <InfoTip text="Velocity adjusted for seasonality — the forecasted daily demand" />
                   </span>
                   <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">{data.adjusted_velocity.toFixed(2)}/day</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <Calendar className="h-3.5 w-3.5" /> Seasonality
+                    <Calendar className="h-3.5 w-3.5" /> Seasonality <InfoTip text="Demand multiplier vs last year. Above 1.0x = growing, below = declining" />
                   </span>
                   <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">{data.seasonality_factor.toFixed(2)}x</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <Clock className="h-3.5 w-3.5" /> Lead Time
+                    <Clock className="h-3.5 w-3.5" /> Lead Time <InfoTip text="Days from placing an order to receiving inventory" />
                   </span>
                   <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">{data.lead_time_days} days</span>
                 </div>
                 {data.item_cost > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                      <DollarSign className="h-3.5 w-3.5" /> Unit Cost
+                      <DollarSign className="h-3.5 w-3.5" /> Unit Cost <InfoTip text="Cost per unit from the supplier" />
                     </span>
                     <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">${data.item_cost.toFixed(2)}</span>
                   </div>
@@ -326,14 +337,14 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-2 space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                      <DollarSign className="h-3.5 w-3.5" /> Revenue (90d)
+                      <DollarSign className="h-3.5 w-3.5" /> Revenue (90d) <InfoTip text="Total revenue generated in the last 90 days" />
                     </span>
                     <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">{fmtCurrency(data.total_revenue_90d)}</span>
                   </div>
                   {data.margin_90d !== null && (
                     <div className="flex justify-between items-center">
                       <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                        <BarChart3 className="h-3.5 w-3.5" /> Margin (90d)
+                        <BarChart3 className="h-3.5 w-3.5" /> Margin (90d) <InfoTip text="Profit margin based on revenue minus cost of goods over 90 days" />
                       </span>
                       <span className={`font-bold tabular-nums ${data.margin_90d >= 30 ? "text-green-600 dark:text-green-400" : data.margin_90d >= 15 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>{data.margin_90d.toFixed(1)}%</span>
                     </div>
