@@ -128,14 +128,88 @@ function StatCards({ pos, vendors }: { pos: POListItem[]; vendors: VendorSummary
 }
 
 // --- Expanded PO Detail ---
+type LineSortKey = "sku" | "product" | "fulfillment" | "remaining" | "amount" | "expected" | "status";
+
+function sortLines(lines: POLineItem[], key: LineSortKey, dir: SortDir): POLineItem[] {
+  return [...lines].sort((a, b) => {
+    let cmp = 0;
+    switch (key) {
+      case "sku": cmp = a.sku.localeCompare(b.sku); break;
+      case "product": cmp = (a.display_name || a.sku).localeCompare(b.display_name || b.sku); break;
+      case "fulfillment": {
+        const pctA = a.ordered_qty > 0 ? a.received_qty / a.ordered_qty : 0;
+        const pctB = b.ordered_qty > 0 ? b.received_qty / b.ordered_qty : 0;
+        cmp = pctA - pctB;
+        break;
+      }
+      case "remaining": cmp = a.remaining_qty - b.remaining_qty; break;
+      case "amount": cmp = a.amount - b.amount; break;
+      case "expected": {
+        const aVal = a.expected_date || "";
+        const bVal = b.expected_date || "";
+        if (!aVal && !bVal) cmp = 0;
+        else if (!aVal) cmp = 1;
+        else if (!bVal) cmp = -1;
+        else cmp = aVal.localeCompare(bVal);
+        break;
+      }
+      case "status": {
+        const order: Record<string, number> = { Pending: 0, Partial: 1, Received: 2 };
+        cmp = (order[lineStatusBadge(a.ordered_qty, a.received_qty).label] ?? 3) - (order[lineStatusBadge(b.ordered_qty, b.received_qty).label] ?? 3);
+        break;
+      }
+    }
+    if (key === "expected" && ((!a.expected_date && b.expected_date) || (a.expected_date && !b.expected_date))) return cmp;
+    return dir === "asc" ? cmp : -cmp;
+  });
+}
+
+function LineSortHeader({ label, sortKey, current, dir, onSort, align = "left", className = "" }: {
+  label: ReactNode; sortKey: LineSortKey; current: LineSortKey; dir: SortDir; onSort: (k: LineSortKey) => void; align?: "left" | "right" | "center"; className?: string;
+}) {
+  const active = current === sortKey;
+  return (
+    <th
+      onClick={() => onSort(sortKey)}
+      className={`font-medium px-3 py-2 cursor-pointer select-none hover:text-slate-600 dark:hover:text-slate-300 transition-colors ${align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left"} ${className}`}
+    >
+      <span className={`inline-flex items-center gap-1 ${align === "right" ? "justify-end" : align === "center" ? "justify-center" : ""}`}>
+        {label}
+        {active && dir === "asc" ? (
+          <ChevronUp className="w-3 h-3 text-blue-500" />
+        ) : active && dir === "desc" ? (
+          <ChevronDown className="w-3 h-3 text-blue-500" />
+        ) : (
+          <ChevronsUpDown className="w-3 h-3 text-slate-300 dark:text-slate-600" />
+        )}
+      </span>
+    </th>
+  );
+}
+
 function PODetail({ poNumber }: { poNumber: string }) {
   const [lines, setLines] = useState<POLineItem[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lineSortKey, setLineSortKey] = useState<LineSortKey>("remaining");
+  const [lineSortDir, setLineSortDir] = useState<SortDir>("desc");
 
   useEffect(() => {
     setLoading(true);
     fetchPOLines(poNumber).then(setLines).catch(() => setLines([])).finally(() => setLoading(false));
   }, [poNumber]);
+
+  const toggleLineSort = useCallback((key: LineSortKey) => {
+    setLineSortKey((prev) => {
+      if (prev === key) {
+        setLineSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return key;
+      }
+      setLineSortDir(key === "remaining" || key === "amount" || key === "fulfillment" ? "desc" : "asc");
+      return key;
+    });
+  }, []);
+
+  const sorted = useMemo(() => lines ? sortLines(lines, lineSortKey, lineSortDir) : [], [lines, lineSortKey, lineSortDir]);
 
   if (loading) {
     return <div className="px-6 py-4 text-sm text-slate-400 dark:text-slate-500">Loading...</div>;
@@ -150,17 +224,17 @@ function PODetail({ poNumber }: { poNumber: string }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            <th className="px-4 py-2 text-left font-medium w-36">SKU</th>
-            <th className="px-3 py-2 text-left font-medium">Product</th>
-            <th className="px-3 py-2 text-right font-medium w-40">Fulfillment</th>
-            <th className="px-3 py-2 text-right font-medium w-24">Remaining</th>
-            <th className="px-3 py-2 text-right font-medium w-20">Amount</th>
-            <th className="px-3 py-2 text-left font-medium w-28">Expected</th>
-            <th className="px-3 py-2 text-center font-medium w-20">Status</th>
+            <LineSortHeader label="SKU" sortKey="sku" current={lineSortKey} dir={lineSortDir} onSort={toggleLineSort} className="w-36 !px-4" />
+            <LineSortHeader label="Product" sortKey="product" current={lineSortKey} dir={lineSortDir} onSort={toggleLineSort} />
+            <LineSortHeader label="Fulfillment" sortKey="fulfillment" current={lineSortKey} dir={lineSortDir} onSort={toggleLineSort} align="right" className="w-40" />
+            <LineSortHeader label="Remaining" sortKey="remaining" current={lineSortKey} dir={lineSortDir} onSort={toggleLineSort} align="right" className="w-24" />
+            <LineSortHeader label="Amount" sortKey="amount" current={lineSortKey} dir={lineSortDir} onSort={toggleLineSort} align="right" className="w-20" />
+            <LineSortHeader label="Expected" sortKey="expected" current={lineSortKey} dir={lineSortDir} onSort={toggleLineSort} className="w-28" />
+            <LineSortHeader label="Status" sortKey="status" current={lineSortKey} dir={lineSortDir} onSort={toggleLineSort} align="center" className="w-20" />
           </tr>
         </thead>
         <tbody>
-          {lines.map((line, i) => {
+          {sorted.map((line, i) => {
             const badge = lineStatusBadge(line.ordered_qty, line.received_qty);
             const pct = line.ordered_qty > 0 ? Math.round((line.received_qty / line.ordered_qty) * 100) : 0;
             return (
