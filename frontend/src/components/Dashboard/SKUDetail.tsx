@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { X, Sparkles } from "lucide-react";
 import type { SKUDetail } from "../../types";
 import { fetchSKUDetail } from "../../api/client";
-import { UrgencyBadge } from "./UrgencyBadge";
 import { DetailPanelSkeleton } from "./Skeleton";
 
 interface Props {
@@ -125,10 +124,7 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
             </div>
 
             {/* Status cards */}
-            <div className="grid grid-cols-3 gap-3" data-tour="detail-status-cards">
-              <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-center">
-                <UrgencyBadge urgency={data.urgency} />
-              </div>
+            <div className="grid grid-cols-2 gap-3" data-tour="detail-status-cards">
               <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-center">
                 <div className={`text-lg font-bold tabular-nums ${data.available_qty < 0 ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-slate-100"}`}>
                   {data.available_qty.toLocaleString()}
