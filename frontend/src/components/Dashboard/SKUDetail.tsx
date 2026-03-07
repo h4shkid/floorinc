@@ -56,7 +56,7 @@ function InfoTip({ text }: { text: string }) {
   return (
     <span className="relative group">
       <Info className="h-3 w-3 text-slate-300 dark:text-slate-600 cursor-help" />
-      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-[10px] leading-tight text-white dark:text-slate-900 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 max-w-[220px] text-center font-medium shadow-lg">
+      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-[10px] leading-tight text-white dark:text-slate-900 text-wrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-[220px] text-center font-medium shadow-lg">
         {text}
       </span>
     </span>
