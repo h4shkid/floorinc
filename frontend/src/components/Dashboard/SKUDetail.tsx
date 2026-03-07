@@ -297,17 +297,17 @@ export function SKUDetailPanel({ sku, onClose }: Props) {
                   </span>
                   <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">{data.velocity.toFixed(2)}/day</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <Calendar className="h-3.5 w-3.5" /> Seasonality
-                  </span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">{data.seasonality_factor.toFixed(2)}x</span>
-                </div>
                 <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 -mx-4 px-4 py-1.5">
                   <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
                     <TrendingUp className="h-3.5 w-3.5" /> Adj. Velocity
                   </span>
                   <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">{data.adjusted_velocity.toFixed(2)}/day</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <Calendar className="h-3.5 w-3.5" /> Seasonality
+                  </span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">{data.seasonality_factor.toFixed(2)}x</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
