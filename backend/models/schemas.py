@@ -55,6 +55,49 @@ class TimelineWeek(BaseModel):
     po_count: int
 
 
+class VendorPO(BaseModel):
+    po_number: str
+    po_date: str | None
+    status: str | None
+    total_lines: int
+    total_ordered_qty: int
+    total_received_qty: int
+    total_remaining_qty: int
+    total_amount: float
+    earliest_expected: str | None
+    latest_expected: str | None
+
+
+class VendorSKU(BaseModel):
+    sku: str
+    display_name: str | None
+    remaining_qty: int
+    total_ordered_qty: int
+    total_received_qty: int
+    po_count: int
+
+
+class MonthlySpend(BaseModel):
+    month: str
+    amount: float
+    po_count: int
+
+
+class VendorScorecard(BaseModel):
+    vendor: str
+    rating: str
+    open_pos: int
+    remaining_units: int
+    total_on_order: float
+    late_pos: int
+    total_open_pos_with_date: int
+    late_percentage: float
+    avg_lead_time_days: float | None
+    monthly_spend: list[MonthlySpend]
+    skus: list[VendorSKU]
+    purchase_orders: list[VendorPO]
+
+
 class ForecastItem(BaseModel):
     sku: str
     display_name: str

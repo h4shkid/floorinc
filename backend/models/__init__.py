@@ -15,6 +15,10 @@ from .schemas import (
     POLineItem,
     VendorSummary,
     TimelineWeek,
+    VendorPO,
+    VendorSKU,
+    MonthlySpend,
+    VendorScorecard,
 )
 
 __all__ = [
@@ -34,4 +38,8 @@ __all__ = [
     "POLineItem",
     "VendorSummary",
     "TimelineWeek",
+    "VendorPO",
+    "VendorSKU",
+    "MonthlySpend",
+    "VendorScorecard",
 ]
