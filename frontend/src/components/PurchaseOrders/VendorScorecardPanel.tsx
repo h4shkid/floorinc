@@ -39,10 +39,9 @@ const RATING_CONFIG = {
 interface Props {
   vendor: string;
   onClose: () => void;
-  onNavigateToPO?: (poNumber: string) => void;
 }
 
-export function VendorScorecardPanel({ vendor, onClose, onNavigateToPO }: Props) {
+export function VendorScorecardPanel({ vendor, onClose }: Props) {
   const [data, setData] = useState<VendorScorecard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -228,9 +227,9 @@ export function VendorScorecardPanel({ vendor, onClose, onNavigateToPO }: Props)
                     {data.purchase_orders.map((po) => {
                       const status = poStatusBadge(po);
                       return (
-                        <tr key={po.po_number} className={`border-t border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${onNavigateToPO ? "cursor-pointer" : ""}`} onClick={() => onNavigateToPO?.(po.po_number)}>
+                        <tr key={po.po_number} className="border-t border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                           <td className="px-4 py-2">
-                            <span className={`font-mono text-xs font-semibold ${onNavigateToPO ? "text-blue-600 dark:text-blue-400 hover:underline" : "text-blue-600 dark:text-blue-400"}`}>{po.po_number}</span>
+                            <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{po.po_number}</span>
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-100">{po.total_remaining_qty.toLocaleString()}</td>
                           <td className="px-3 py-2 text-right tabular-nums text-slate-700 dark:text-slate-300">{fmtCurrency(po.total_amount)}</td>
