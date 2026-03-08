@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from database import init_db, sync_from_cloud
-from routers import forecast, lead_times, netsuite, inventory, akeneo, purchase_orders, chat
+from routers import forecast, lead_times, netsuite, inventory, akeneo, purchase_orders, chat, sales
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -80,6 +80,7 @@ app.include_router(inventory.router)
 app.include_router(akeneo.router)
 app.include_router(purchase_orders.router)
 app.include_router(chat.router)
+app.include_router(sales.router)
 
 
 
