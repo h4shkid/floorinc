@@ -19,12 +19,6 @@ from .schemas import (
     VendorSKU,
     MonthlySpend,
     VendorScorecard,
-    SalesKPIs,
-    SalesMonthlyTrend,
-    SalesChannelPerformance,
-    SalesTopSKU,
-    SalesCategoryPerformance,
-    SalesAnalyticsResponse,
 )
 
 __all__ = [
@@ -48,10 +42,4 @@ __all__ = [
     "VendorSKU",
     "MonthlySpend",
     "VendorScorecard",
-    "SalesKPIs",
-    "SalesMonthlyTrend",
-    "SalesChannelPerformance",
-    "SalesTopSKU",
-    "SalesCategoryPerformance",
-    "SalesAnalyticsResponse",
 ]

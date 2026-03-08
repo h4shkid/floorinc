@@ -13,11 +13,10 @@ import { VendorsPage } from "./components/PurchaseOrders/VendorsPage";
 import { GuidePage } from "./components/Guide/GuidePage";
 import { SpotlightTour, type TourStep } from "./components/Guide/SpotlightTour";
 import { ChatWidget } from "./components/Chat/ChatWidget";
-import { SalesPage } from "./components/Sales/SalesPage";
 import { fetchDataStats, fetchSyncStatus } from "./api/client";
 import type { DataStats, SyncStatus, ForecastSummary } from "./types";
 
-type Tab = "dashboard" | "purchase-orders" | "vendors" | "sales" | "import" | "guide";
+type Tab = "dashboard" | "purchase-orders" | "vendors" | "import" | "guide";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -230,7 +229,7 @@ function AuthenticatedApp() {
           </div>
           <div className="flex items-center gap-3">
             <nav className="flex gap-1">
-              {(["dashboard", "purchase-orders", "vendors", "sales", "import", "guide"] as Tab[]).map((t) => (
+              {(["dashboard", "purchase-orders", "vendors", "import", "guide"] as Tab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -240,7 +239,7 @@ function AuthenticatedApp() {
                       : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
                   }`}
                 >
-                  {t === "dashboard" ? "Dashboard" : t === "purchase-orders" ? "Purchase Orders" : t === "vendors" ? "Vendors" : t === "sales" ? "Sales" : t === "import" ? "Data Sync" : "Guide"}
+                  {t === "dashboard" ? "Dashboard" : t === "purchase-orders" ? "Purchase Orders" : t === "vendors" ? "Vendors" : t === "import" ? "Data Sync" : "Guide"}
                 </button>
               ))}
             </nav>
@@ -304,8 +303,6 @@ function AuthenticatedApp() {
         {tab === "purchase-orders" && <PurchaseOrdersPage />}
 
         {tab === "vendors" && <VendorsPage />}
-
-        {tab === "sales" && <SalesPage />}
 
         {tab === "import" && (
           <div>

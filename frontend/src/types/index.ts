@@ -206,61 +206,6 @@ export interface RecentOrder {
   revenue: number;
 }
 
-// --- Sales Analytics ---
-
-export interface SalesKPIs {
-  total_revenue: number;
-  total_orders: number;
-  total_units: number;
-  avg_order_value: number;
-  total_cost: number;
-  gross_margin_pct: number | null;
-  revenue_trend: number | null;
-}
-
-export interface SalesMonthlyTrend {
-  month: string;
-  revenue: number;
-  orders: number;
-  units: number;
-  cost: number;
-}
-
-export interface SalesChannelPerformance {
-  channel: string;
-  revenue: number;
-  orders: number;
-  units: number;
-  revenue_pct: number;
-}
-
-export interface SalesTopSKU {
-  sku: string;
-  display_name: string | null;
-  revenue: number;
-  units: number;
-  orders: number;
-  margin_pct: number | null;
-  top_channel: string | null;
-}
-
-export interface SalesCategoryPerformance {
-  category: string;
-  revenue: number;
-  units: number;
-  orders: number;
-}
-
-export interface SalesAnalyticsResponse {
-  kpis: SalesKPIs;
-  monthly_trend: SalesMonthlyTrend[];
-  channel_performance: SalesChannelPerformance[];
-  top_skus: SalesTopSKU[];
-  category_performance: SalesCategoryPerformance[];
-  date_from: string | null;
-  date_to: string | null;
-}
-
 export interface SKUDetail {
   sku: string;
   display_name: string;

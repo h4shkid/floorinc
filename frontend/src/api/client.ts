@@ -1,4 +1,4 @@
-import type { DashboardResponse, DashboardParams, LeadTime, SKUDetail, SyncStatus, DataStats, POListItem, POLineItem, VendorSummary, TimelineWeek, VendorScorecard, SalesAnalyticsResponse } from "../types";
+import type { DashboardResponse, DashboardParams, LeadTime, SKUDetail, SyncStatus, DataStats, POListItem, POLineItem, VendorSummary, TimelineWeek, VendorScorecard } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -136,10 +136,4 @@ export async function fetchPOTimeline(): Promise<TimelineWeek[]> {
 
 export async function fetchVendorScorecard(vendor: string): Promise<VendorScorecard> {
   return fetchJSON<VendorScorecard>(`${BASE}/purchase-orders/vendor/${encodeURIComponent(vendor)}`);
-}
-
-export async function fetchSalesAnalytics(months = 12, channel = ""): Promise<SalesAnalyticsResponse> {
-  const p = new URLSearchParams({ months: String(months) });
-  if (channel) p.set("channel", channel);
-  return fetchJSON<SalesAnalyticsResponse>(`${BASE}/sales/analytics?${p}`);
 }
