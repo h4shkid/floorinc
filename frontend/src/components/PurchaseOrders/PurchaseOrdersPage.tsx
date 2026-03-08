@@ -324,7 +324,7 @@ function DeliveryTimeline({ timeline }: { timeline: TimelineWeek[] }) {
 }
 
 // --- Main Page ---
-export function PurchaseOrdersPage({ initialExpandPO, onExpandPOConsumed }: { initialExpandPO?: string | null; onExpandPOConsumed?: () => void } = {}) {
+export function PurchaseOrdersPage() {
   const [pos, setPOs] = useState<POListItem[]>([]);
   const [vendors, setVendors] = useState<VendorSummary[]>([]);
   const [timeline, setTimeline] = useState<TimelineWeek[]>([]);
@@ -339,14 +339,6 @@ export function PurchaseOrdersPage({ initialExpandPO, onExpandPOConsumed }: { in
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 20;
-
-  // Handle navigation from Vendor scorecard → expand a specific PO
-  useEffect(() => {
-    if (initialExpandPO) {
-      setExpanded(initialExpandPO);
-      onExpandPOConsumed?.();
-    }
-  }, [initialExpandPO, onExpandPOConsumed]);
 
   useEffect(() => {
     const id = setTimeout(() => setSearchDebounced(search), 300);
@@ -639,14 +631,7 @@ export function PurchaseOrdersPage({ initialExpandPO, onExpandPOConsumed }: { in
       )}
 
       {selectedVendor && (
-        <VendorScorecardPanel
-          vendor={selectedVendor}
-          onClose={() => setSelectedVendor(null)}
-          onNavigateToPO={(poNumber) => {
-            setSelectedVendor(null);
-            setExpanded(poNumber);
-          }}
-        />
+        <VendorScorecardPanel vendor={selectedVendor} onClose={() => setSelectedVendor(null)} />
       )}
     </div>
   );

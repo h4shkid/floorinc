@@ -177,7 +177,6 @@ function DataStatsBar({ stats, lastSync }: { stats: DataStats | null; lastSync: 
 function AuthenticatedApp() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
-  const [expandPO, setExpandPO] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(getInitialDark);
   const [dataStats, setDataStats] = useState<DataStats | null>(null);
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -294,9 +293,9 @@ function AuthenticatedApp() {
           </>
         )}
 
-        {tab === "purchase-orders" && <PurchaseOrdersPage initialExpandPO={expandPO} onExpandPOConsumed={() => setExpandPO(null)} />}
+        {tab === "purchase-orders" && <PurchaseOrdersPage />}
 
-        {tab === "vendors" && <VendorsPage onNavigateToPO={(poNumber) => { setExpandPO(poNumber); setTab("purchase-orders"); }} />}
+        {tab === "vendors" && <VendorsPage />}
 
         {tab === "import" && (
           <div>
