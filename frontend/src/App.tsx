@@ -14,7 +14,7 @@ import { GuidePage } from "./components/Guide/GuidePage";
 import { SpotlightTour, type TourStep } from "./components/Guide/SpotlightTour";
 import { ChatWidget } from "./components/Chat/ChatWidget";
 import { fetchDataStats, fetchSyncStatus } from "./api/client";
-import type { DataStats, SyncStatus } from "./types";
+import type { DataStats, SyncStatus, ForecastSummary } from "./types";
 
 type Tab = "dashboard" | "purchase-orders" | "vendors" | "import" | "guide";
 
@@ -181,9 +181,16 @@ function AuthenticatedApp() {
   const [dataStats, setDataStats] = useState<DataStats | null>(null);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [runTour, setRunTour] = useState(false);
+  const [baseSummary, setBaseSummary] = useState<ForecastSummary | null>(null);
   const { data, loading, error, params, updateParams, toggleSort, reload } = useForecast();
 
   const tourSteps = useMemo(() => buildTourSteps(), []);
+
+  useEffect(() => {
+    if (data && !params.urgency) {
+      setBaseSummary(data.summary);
+    }
+  }, [data, params.urgency]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -264,7 +271,7 @@ function AuthenticatedApp() {
               </div>
             )}
 
-            {data && <SummaryCards summary={data.summary} activeUrgency={params.urgency} onUrgencyClick={(u) => updateParams({ urgency: u })} />}
+            {(baseSummary || data?.summary) && <SummaryCards summary={baseSummary || data!.summary} activeUrgency={params.urgency} onUrgencyClick={(u) => updateParams({ urgency: u })} />}
 
             <FilterBar params={params} onChange={updateParams} />
 

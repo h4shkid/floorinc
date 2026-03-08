@@ -52,7 +52,7 @@ function Card({ label, count, color, icon: Icon, urgency, activeUrgency, onClick
     <button
       type="button"
       onClick={() => onClick?.(isActive ? "" : urgency)}
-      className={`rounded-xl border border-l-4 ${borderColors[color]} ${bgColors[color]} p-4 hover-lift cursor-pointer text-left transition-all ${isActive ? "ring-2 ring-blue-500 border-blue-300 dark:border-blue-600 shadow-md" : "border-slate-200 dark:border-slate-700"}`}
+      className={`rounded-xl border border-slate-200 dark:border-slate-700 border-l-4 ${borderColors[color]} ${bgColors[color]} p-4 hover-lift cursor-pointer text-left transition-all`}
     >
       <div className="flex items-start justify-between">
         <div>
