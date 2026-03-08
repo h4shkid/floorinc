@@ -264,7 +264,7 @@ function AuthenticatedApp() {
               </div>
             )}
 
-            {data && <SummaryCards summary={data.summary} />}
+            {data && <SummaryCards summary={data.summary} activeUrgency={params.urgency} onUrgencyClick={(u) => updateParams({ urgency: u })} />}
 
             <FilterBar params={params} onChange={updateParams} />
 
