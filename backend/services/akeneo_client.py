@@ -9,6 +9,7 @@ AKENEO_USERNAME = os.environ.get("AKENEO_USERNAME", "")
 AKENEO_PASSWORD = os.environ.get("AKENEO_PASSWORD", "")
 
 _token_cache = {"access_token": None, "expires_at": 0}
+_root_model_cache: dict[str, str | None] = {}
 
 
 def is_configured() -> bool:
@@ -52,11 +53,68 @@ def get_product(sku: str) -> dict | None:
     return resp.json()
 
 
-def update_promise_date(sku: str, value: str) -> bool:
+def get_product_model(code: str) -> dict | None:
+    resp = requests.get(
+        f"{AKENEO_URL}/api/rest/v1/product-models/{requests.utils.quote(code, safe='')}",
+        headers=_headers(),
+        timeout=30,
+    )
+    if resp.status_code == 404:
+        return None
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_root_model_code(product: dict) -> str | None:
+    """Walk up the parent chain to find the top-level product model code. Cached."""
+    parent = product.get("parent")
+    if not parent:
+        return None
+
+    if parent in _root_model_cache:
+        return _root_model_cache[parent]
+
+    # Walk up until we find a model with no parent
+    code = parent
+    visited = [code]
+    while True:
+        model = get_product_model(code)
+        if model is None:
+            break
+        model_parent = model.get("parent")
+        if not model_parent:
+            break
+        code = model_parent
+        visited.append(code)
+
+    # Cache all visited codes to the same root
+    for v in visited:
+        _root_model_cache[v] = code
+
+    return code
+
+
+def set_magento_sync_flag(root_model_code: str) -> bool:
+    """Set connector_magento_sync=true on the top-level product model."""
+    payload = {
+        "values": {
+            "connector_magento_sync": [{"data": True, "locale": None, "scope": None}],
+        }
+    }
+    resp = requests.patch(
+        f"{AKENEO_URL}/api/rest/v1/product-models/{requests.utils.quote(root_model_code, safe='')}",
+        headers=_headers(),
+        json=payload,
+        timeout=30,
+    )
+    return resp.status_code in (200, 201, 204)
+
+
+def update_promise_date(sku: str, value: str, product: dict | None = None) -> bool:
+    """Update promise_date on the SKU and set sync flag on its root model."""
     payload = {
         "values": {
             "promise_date": [{"data": value, "locale": None, "scope": None}],
-            "connector_magento_sync": [{"data": True, "locale": None, "scope": None}],
         }
     }
     resp = requests.patch(
@@ -65,4 +123,13 @@ def update_promise_date(sku: str, value: str) -> bool:
         json=payload,
         timeout=30,
     )
-    return resp.status_code in (200, 201, 204)
+    if resp.status_code not in (200, 201, 204):
+        return False
+
+    # Set sync flag on root product model
+    if product:
+        root = get_root_model_code(product)
+        if root:
+            set_magento_sync_flag(root)
+
+    return True

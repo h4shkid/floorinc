@@ -162,7 +162,7 @@ def run_akeneo_sync():
                     skipped += 1
                     continue
 
-                success = update_promise_date(sku, new_value)
+                success = update_promise_date(sku, new_value, product=product)
                 if success:
                     updated += 1
                 else:
